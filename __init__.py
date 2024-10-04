@@ -90,7 +90,7 @@ async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     cid = database.get_user_cid(qq)
-    academy_msg = api.get_academy_list(token=token[0], sid=token[1], cid=cid)
+    academy_msg = api.get_academy_list(token=token[0], sid=token[1], cid=cid[0])
     if academy_msg != "-1":
         msg = ""
         for activity in academy_msg["data"]["list"]:
@@ -149,7 +149,7 @@ async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     cid = database.get_user_cid(qq)
-    can_join_activity_list = api.get_can_join_activity(token=token[0], sid=token[1], cid=cid)
+    can_join_activity_list = api.get_can_join_activity(token=token[0], sid=token[1], cid=cid[0])
     if can_join_activity_list != "-1":
         msg = ""
         for activity in can_join_activity_list:
