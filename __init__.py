@@ -202,7 +202,7 @@ async def handle_function(event: Event):
     await academy_activity.finish(Message(msg))
 
 
-@scheduler.scheduled_job("interval", minutes=1, id="job_10_minutes")
+@scheduler.scheduled_job("interval", minutes=10, id="job_10_minutes")
 async def update_activity():
     auto_update_list = [row[0] for row in database.get_auto_push()]
     user_info_list = []
