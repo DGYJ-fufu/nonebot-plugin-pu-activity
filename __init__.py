@@ -34,6 +34,7 @@ activity_info = on_command("活动", rule=to_me())
 can_join_activity = on_keyword({"获取可参加活动"}, rule=to_me())
 join_activity = on_command("报名", rule=to_me())
 auto_push = on_command("活动推送", rule=to_me())
+update_token = on_keyword({"刷新令牌"}, rule=to_me())
 help = on_keyword({"帮助"}, rule=to_me())
 
 
@@ -42,6 +43,7 @@ async def _(state: T_State, event: Event):
     state["qq"] = event.get_user_id()
 
 
+# 添加用户
 @user.got("user_info", prompt=MessageTemplate("请输入用户信息\n格式如下:\n账号:密码:学校全称"))
 async def _(state: T_State, user_info: str = ArgPlainText()):
     # 获取输入的用户信息
@@ -61,12 +63,18 @@ async def _(state: T_State, user_info: str = ArgPlainText()):
     await user.finish(MessageTemplate("添加的用户信息:\n账号:{username}\n密码:{password}\n学校:{sid}"))
 
 
+# 获取全部活动列表
 @all_activity.handle()
 async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     activity_msg = api.get_activity_list(token=token[0], sid=token[1])
-    if activity_msg != "-1":
+    if activity_msg == "-1":
+        await all_activity.finish(Message("内部错误"))
+    elif activity_msg == "-2":
+        database.update_user_token(qq)
+        await all_activity.finish(Message("请求错误"))
+    else:
         msg = ""
         for activity in activity_msg["data"]["list"]:
             msg += f'活动名称:{activity["name"]}\n'
@@ -80,18 +88,21 @@ async def handle_function(event: Event):
             msg += f'活动ID:{activity["id"]}\n'
             msg += "\n"
         await all_activity.finish(Message(msg))
-    else:
-        database.update_user_token(qq)
-        await all_activity.finish(Message("获取失败"))
 
 
+# 获取学院活动
 @academy_activity.handle()
 async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     cid = database.get_user_cid(qq)
     academy_msg = api.get_academy_list(token=token[0], sid=token[1], cid=cid[0])
-    if academy_msg != "-1":
+    if academy_msg == "-1":
+        await academy_activity.finish(Message("内部错误"))
+    elif academy_msg == "-2":
+        database.update_user_token(qq)
+        await academy_activity.finish(Message("请求错误"))
+    else:
         msg = ""
         for activity in academy_msg["data"]["list"]:
             msg += f'活动名称:{activity["name"]}\n'
@@ -106,11 +117,9 @@ async def handle_function(event: Event):
             msg += f'活动ID:{activity["id"]}\n'
             msg += "\n"
         await academy_activity.finish(Message(msg))
-    else:
-        database.update_user_token(qq)
-        await academy_activity.finish(Message("获取失败"))
 
 
+# 查询活动信息
 @activity_info.handle()
 async def handle_function(event: Event, args: Message = CommandArg()):
     qq = event.get_user_id()
@@ -118,6 +127,11 @@ async def handle_function(event: Event, args: Message = CommandArg()):
     if id := args.extract_plain_text():
         activity_msg = api.get_activity_info(token=token[0], sid=token[1], id=id)
         if activity_msg != "-1":
+            await activity_info.finish(Message("内部错误"))
+        elif activity_msg == "-2":
+            database.update_user_token(qq)
+            await activity_info.finish(Message("请求失败"))
+        else:
             activity_msg = activity_msg["data"]["baseInfo"]
             msg = f'活动名称:{activity_msg["name"]}\n'
             msg += f'活动分值:{activity_msg["credit"]}\n'
@@ -136,21 +150,23 @@ async def handle_function(event: Event, args: Message = CommandArg()):
             msg += f'活动简介:{activity_msg["description"]}\n'
             msg += f'活动状态:{activity_msg["statusName"]}\n'
             await activity_info.finish(msg)
-        else:
-            database.update_user_token(qq)
-            await activity_info.finish(Message("获取失败"))
-
     else:
         await activity_info.finish("请输入活动ID")
 
 
+# 获取可加入活动
 @can_join_activity.handle()
 async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     cid = database.get_user_cid(qq)
     can_join_activity_list = api.get_can_join_activity(token=token[0], sid=token[1], cid=cid[0])
-    if can_join_activity_list != "-1":
+    if can_join_activity_list == "-1":
+        await can_join_activity.finish(Message("内部错误"))
+    elif can_join_activity_list == "-2":
+        database.update_user_token(qq)
+        await can_join_activity.finish(Message("请求失败"))
+    else:
         msg = ""
         for activity in can_join_activity_list:
             msg += f'活动名称:{activity["name"]}\n'
@@ -167,24 +183,25 @@ async def handle_function(event: Event):
             await can_join_activity.finish(Message(msg))
         else:
             await can_join_activity.finish(Message("暂无可参加活动"))
-    else:
-        database.update_user_token(qq)
-        await can_join_activity.finish(Message("获取失败"))
 
 
+# 活动报名
 @join_activity.handle()
 async def handle_function(event: Event, args: Message = CommandArg()):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     if id := args.extract_plain_text():
         join_msg = api.join_activity(token=token[0], sid=token[1], id=id)
-        if join_msg != "-1":
-            await academy_activity.finish(Message(join_msg["message"]))
-        else:
+        if join_msg == "-1":
+            await academy_activity.finish(Message("内部错误"))
+        elif join_msg == "-2":
             database.update_user_token(qq)
             await academy_activity.finish(Message("请求错误"))
+        else:
+            await academy_activity.finish(Message(join_msg["message"]))
 
 
+# 活动推送开关
 @auto_push.handle()
 async def handle_function(event: Event, args: Message = CommandArg()):
     qq = event.get_user_id()
@@ -196,12 +213,22 @@ async def handle_function(event: Event, args: Message = CommandArg()):
         await academy_activity.finish(Message("已关闭活动推送"))
 
 
+# 帮助
 @help.handle()
 async def handle_function(event: Event):
     msg = "指令列表:\n获取全部活动\n获取学院活动\n获取可参加活动\n添加用户\n报名xxxxxxx\n活动xxxxxxx\n活动推送开启/关闭\n注:xxxx为活动ID"
     await academy_activity.finish(Message(msg))
 
 
+# 刷新令牌
+@update_token.handle()
+async def handle_function(event: Event):
+    qq = event.get_user_id()
+    database.update_user_token(qq)
+    await academy_activity.finish(Message("已刷新"))
+
+
+# 周期更新活动
 @scheduler.scheduled_job("interval", minutes=10, id="job_10_minutes")
 async def update_activity():
     auto_update_list = [row[0] for row in database.get_auto_push()]

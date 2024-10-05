@@ -36,10 +36,13 @@ def login(username, password, sid):
         res = conn.getresponse()
         data = res.read()
         res = json.loads(data)
-        return {
-            "token": res["data"]["token"],
-            "cid": res["data"]["baseUserInfo"]["cid"]
-        }
+        if res["code"] == 0:
+            return {
+                "token": res["data"]["token"],
+                "cid": res["data"]["baseUserInfo"]["cid"]
+            }
+        else:
+            return "-2"
     except Exception as e:
         return "-1"
 
@@ -59,7 +62,10 @@ def get_activity_list(token, sid):
         conn.request("POST", "/apis/activity/list", payload, headers)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
-        return json.loads(data)
+        if json.loads(data)["code"] == 0:
+            return json.loads(data)
+        else:
+            return "-2"
     except Exception as e:
         return "-1"
 
@@ -80,7 +86,10 @@ def get_academy_list(token, sid, cid):
         conn.request("POST", "/apis/activity/list", payload, headers)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
-        return json.loads(data)
+        if json.loads(data)["code"] == 0:
+            return json.loads(data)
+        else:
+            return "-2"
     except Exception as e:
         return "-1"
 
@@ -97,7 +106,10 @@ def get_activity_info(token, sid, id):
         conn.request("POST", "/apis/activity/info", payload, headers)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
-        return json.loads(data)
+        if json.loads(data)["code"] == 0:
+            return json.loads(data)
+        else:
+            return "-2"
     except Exception as e:
         return "-1"
 
@@ -106,17 +118,28 @@ def get_activity_info(token, sid, id):
 def get_can_join_activity(token, sid, cid):
     try:
         activities = []
-        for activity in get_activity_list(token, sid)["data"]["list"]:
-            if activity["statusName"] != "已结束" and activity["allowUserCount"] != activity["joinUserCount"]:
-                info = get_activity_info(token, sid, activity["id"])["data"]["baseInfo"]
-                if compare_datetime(get_datetime(), info["joinEndTime"]):
-                    if info["allowCollege"] is None or (
-                            isinstance(info["allowCollege"], list) and not info["allowCollege"]):
-                        activities.append(activity)
+        activity_list = get_activity_list(token, sid)["data"]["list"]
+        if activity_list == "-1":
+            return "-1"
+        elif activity_list == "-2":
+            return "-2"
+        else:
+            for activity in activity_list:
+                if activity["statusName"] != "已结束" and activity["allowUserCount"] != activity["joinUserCount"]:
+                    info = get_activity_info(token, sid, activity["id"])["data"]["baseInfo"]
+                    if info == "-1":
+                        return "-1"
+                    elif info == "-2":
+                        return "-2"
                     else:
-                        if info["allowCollege"][0]["id"] == cid:
-                            activities.append(activity)
-        return activities
+                        if compare_datetime(get_datetime(), info["joinEndTime"]):
+                            if info["allowCollege"] is None or (
+                                    isinstance(info["allowCollege"], list) and not info["allowCollege"]):
+                                activities.append(activity)
+                            else:
+                                if info["allowCollege"][0]["id"] == cid:
+                                    activities.append(activity)
+            return activities
     except Exception as e:
         return "-1"
 
@@ -133,7 +156,10 @@ def join_activity(token, sid, id):
         conn.request("POST", "/apis/activity/join", payload, headers)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
-        return json.loads(data)
+        if json.loads(data)["code"] == 401:
+            return "-2"
+        else:
+            return json.loads(data)
     except Exception as e:
         return "-1"
 
@@ -151,6 +177,9 @@ def get_activity_mapping(token, sid):
         conn.request("POST", "/apis/mapping/data", payload, headers)
         res = conn.getresponse()
         data = res.read().decode("utf-8")
-        return json.loads(data)
+        if json.loads(data)["code"] == 0:
+            return json.loads(data)
+        else:
+            return "-2"
     except Exception as e:
         return "-1"
