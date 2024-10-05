@@ -81,6 +81,9 @@ async def handle_function(event: Event):
                 msg += f'活动ID:{activity["id"]}\n'
                 msg += "\n"
             await all_activity.finish(Message(msg))
+        else:
+            database.update_user_token(qq)
+            await all_activity.finish(Message("获取失败"))
     except Exception as e:
         database.update_user_token(qq)
         await all_activity.finish(Message("获取失败"))
@@ -108,6 +111,9 @@ async def handle_function(event: Event):
                 msg += f'活动ID:{activity["id"]}\n'
                 msg += "\n"
             await academy_activity.finish(Message(msg))
+        else:
+            database.update_user_token(qq)
+            await academy_activity.finish(Message("获取失败"))
     except Exception as e:
         database.update_user_token(qq)
         await all_activity.finish(Message("获取失败"))
@@ -139,6 +145,9 @@ async def handle_function(event: Event, args: Message = CommandArg()):
                 msg += f'活动简介:{activity_msg["description"]}\n'
                 msg += f'活动状态:{activity_msg["statusName"]}\n'
                 await activity_info.finish(msg)
+            else:
+                database.update_user_token(qq)
+                await activity_info.finish(Message("获取失败"))
         except Exception as e:
             database.update_user_token(qq)
             await all_activity.finish(Message("获取失败"))
@@ -171,6 +180,9 @@ async def handle_function(event: Event):
                 await can_join_activity.finish(Message(msg))
             else:
                 await can_join_activity.finish(Message("暂无可参加活动"))
+        else:
+            database.update_user_token(qq)
+            await can_join_activity.finish(Message("获取失败"))
     except Exception as e:
         database.update_user_token(qq)
         await all_activity.finish(Message("获取失败"))
@@ -185,6 +197,9 @@ async def handle_function(event: Event, args: Message = CommandArg()):
             join_msg = api.join_activity(token=token[0], sid=token[1], id=id)
             if join_msg != "-1":
                 await academy_activity.finish(Message(join_msg["message"]))
+            else:
+                database.update_user_token(qq)
+                await academy_activity.finish(Message("请求错误"))
         except Exception as e:
             database.update_user_token(qq)
             await all_activity.finish(Message("请求错误"))
