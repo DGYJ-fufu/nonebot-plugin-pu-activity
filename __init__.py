@@ -65,22 +65,26 @@ async def _(state: T_State, user_info: str = ArgPlainText()):
 async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
-    activity_msg = api.get_activity_list(token=token[0], sid=token[1])
-    if activity_msg != "-1":
-        msg = ""
-        for activity in activity_msg["data"]["list"]:
-            msg += f'活动名称:{activity["name"]}\n'
-            msg += f'活动分值:{activity["credit"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'开始时间:{activity["startTime"]}\n'
-            msg += f'结束时间:{activity["endTime"]}\n'
-            msg += f'可参与人数:{activity["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity["joinUserCount"]}\n'
-            msg += f'活动状态:{activity["statusName"]}\n'
-            msg += f'活动ID:{activity["id"]}\n'
-            msg += "\n"
-        await all_activity.finish(Message(msg))
-    else:
+    try:
+        activity_msg = api.get_activity_list(token=token[0], sid=token[1])
+        if activity_msg != "-1":
+            msg = ""
+            for activity in activity_msg["data"]["list"]:
+                msg += f'活动名称:{activity["name"]}\n'
+                msg += f'活动分值:{activity["credit"]}\n'
+                msg += f'报名时间:{activity["joinStartTime"]}\n'
+                msg += f'开始时间:{activity["startTime"]}\n'
+                msg += f'结束时间:{activity["endTime"]}\n'
+                msg += f'可参与人数:{activity["allowUserCount"]}\n'
+                msg += f'已报名人数:{activity["joinUserCount"]}\n'
+                msg += f'活动状态:{activity["statusName"]}\n'
+                msg += f'活动ID:{activity["id"]}\n'
+                msg += "\n"
+            await all_activity.finish(Message(msg))
+        else:
+            database.update_user_token(qq)
+            await all_activity.finish(Message("获取失败"))
+    except Exception as e:
         database.update_user_token(qq)
         await all_activity.finish(Message("获取失败"))
 
@@ -90,25 +94,29 @@ async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     cid = database.get_user_cid(qq)
-    academy_msg = api.get_academy_list(token=token[0], sid=token[1], cid=cid[0])
-    if academy_msg != "-1":
-        msg = ""
-        for activity in academy_msg["data"]["list"]:
-            msg += f'活动名称:{activity["name"]}\n'
-            msg += f'活动分值:{activity["credit"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'开始时间:{activity["startTime"]}\n'
-            msg += f'结束时间:{activity["endTime"]}\n'
-            msg += f'可参与人数:{activity["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity["joinUserCount"]}\n'
-            msg += f'活动状态:{activity["statusName"]}\n'
-            msg += f'活动ID:{activity["id"]}\n'
-            msg += "\n"
-        await academy_activity.finish(Message(msg))
-    else:
+    try:
+        academy_msg = api.get_academy_list(token=token[0], sid=token[1], cid=cid[0])
+        if academy_msg != "-1":
+            msg = ""
+            for activity in academy_msg["data"]["list"]:
+                msg += f'活动名称:{activity["name"]}\n'
+                msg += f'活动分值:{activity["credit"]}\n'
+                msg += f'报名时间:{activity["joinStartTime"]}\n'
+                msg += f'报名时间:{activity["joinStartTime"]}\n'
+                msg += f'开始时间:{activity["startTime"]}\n'
+                msg += f'结束时间:{activity["endTime"]}\n'
+                msg += f'可参与人数:{activity["allowUserCount"]}\n'
+                msg += f'已报名人数:{activity["joinUserCount"]}\n'
+                msg += f'活动状态:{activity["statusName"]}\n'
+                msg += f'活动ID:{activity["id"]}\n'
+                msg += "\n"
+            await academy_activity.finish(Message(msg))
+        else:
+            database.update_user_token(qq)
+            await academy_activity.finish(Message("获取失败"))
+    except Exception as e:
         database.update_user_token(qq)
-        await academy_activity.finish(Message("获取失败"))
+        await all_activity.finish(Message("获取失败"))
 
 
 @activity_info.handle()
@@ -116,29 +124,33 @@ async def handle_function(event: Event, args: Message = CommandArg()):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     if id := args.extract_plain_text():
-        activity_msg = api.get_activity_info(token=token[0], sid=token[1], id=id)
-        if activity_msg != "-1":
-            activity_msg = activity_msg["data"]["baseInfo"]
-            msg = f'活动名称:{activity_msg["name"]}\n'
-            msg += f'活动分值:{activity_msg["credit"]}\n'
-            if activity_msg["allowCollege"]:
-                msg += f"所属学院:{activity_msg['allowCollege'][0]['name']}\n"
+        try:
+            activity_msg = api.get_activity_info(token=token[0], sid=token[1], id=id)
+            if activity_msg != "-1":
+                activity_msg = activity_msg["data"]["baseInfo"]
+                msg = f'活动名称:{activity_msg["name"]}\n'
+                msg += f'活动分值:{activity_msg["credit"]}\n'
+                if activity_msg["allowCollege"]:
+                    msg += f"所属学院:{activity_msg['allowCollege'][0]['name']}\n"
+                else:
+                    msg += "所属学院:全部\n"
+                msg += f'活动类型:{activity_msg["categoryName"]}\n'
+                msg += f'可参与人数:{activity_msg["allowUserCount"]}\n'
+                msg += f'已报名人数:{activity_msg["joinUserCount"]}\n'
+                msg += f'报名开始时间:{activity_msg["joinStartTime"]}\n'
+                msg += f'报名结束时间:{activity_msg["joinEndTime"]}\n'
+                msg += f'活动开始时间:{activity_msg["startTime"]}\n'
+                msg += f'活动结束时间:{activity_msg["endTime"]}\n'
+                msg += f'活动地址:{activity_msg["address"]}\n'
+                msg += f'活动简介:{activity_msg["description"]}\n'
+                msg += f'活动状态:{activity_msg["statusName"]}\n'
+                await activity_info.finish(msg)
             else:
-                msg += "所属学院:全部\n"
-            msg += f'活动类型:{activity_msg["categoryName"]}\n'
-            msg += f'可参与人数:{activity_msg["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity_msg["joinUserCount"]}\n'
-            msg += f'报名开始时间:{activity_msg["joinStartTime"]}\n'
-            msg += f'报名结束时间:{activity_msg["joinEndTime"]}\n'
-            msg += f'活动开始时间:{activity_msg["startTime"]}\n'
-            msg += f'活动结束时间:{activity_msg["endTime"]}\n'
-            msg += f'活动地址:{activity_msg["address"]}\n'
-            msg += f'活动简介:{activity_msg["description"]}\n'
-            msg += f'活动状态:{activity_msg["statusName"]}\n'
-            await activity_info.finish(msg)
-        else:
+                database.update_user_token(qq)
+                await activity_info.finish(Message("获取失败"))
+        except Exception as e:
             database.update_user_token(qq)
-            await activity_info.finish(Message("获取失败"))
+            await all_activity.finish(Message("获取失败"))
 
     else:
         await activity_info.finish("请输入活动ID")
@@ -149,27 +161,31 @@ async def handle_function(event: Event):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     cid = database.get_user_cid(qq)
-    can_join_activity_list = api.get_can_join_activity(token=token[0], sid=token[1], cid=cid[0])
-    if can_join_activity_list != "-1":
-        msg = ""
-        for activity in can_join_activity_list:
-            msg += f'活动名称:{activity["name"]}\n'
-            msg += f'活动分值:{activity["credit"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'开始时间:{activity["startTime"]}\n'
-            msg += f'结束时间:{activity["endTime"]}\n'
-            msg += f'可参与人数:{activity["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity["joinUserCount"]}\n'
-            msg += f'活动状态:{activity["statusName"]}\n'
-            msg += f'活动ID:{activity["id"]}\n'
-            msg += "\n"
-        if msg != "":
-            await can_join_activity.finish(Message(msg))
+    try:
+        can_join_activity_list = api.get_can_join_activity(token=token[0], sid=token[1], cid=cid[0])
+        if can_join_activity_list != "-1":
+            msg = ""
+            for activity in can_join_activity_list:
+                msg += f'活动名称:{activity["name"]}\n'
+                msg += f'活动分值:{activity["credit"]}\n'
+                msg += f'报名时间:{activity["joinStartTime"]}\n'
+                msg += f'开始时间:{activity["startTime"]}\n'
+                msg += f'结束时间:{activity["endTime"]}\n'
+                msg += f'可参与人数:{activity["allowUserCount"]}\n'
+                msg += f'已报名人数:{activity["joinUserCount"]}\n'
+                msg += f'活动状态:{activity["statusName"]}\n'
+                msg += f'活动ID:{activity["id"]}\n'
+                msg += "\n"
+            if msg != "":
+                await can_join_activity.finish(Message(msg))
+            else:
+                await can_join_activity.finish(Message("暂无可参加活动"))
         else:
-            await can_join_activity.finish(Message("暂无可参加活动"))
-    else:
+            database.update_user_token(qq)
+            await can_join_activity.finish(Message("获取失败"))
+    except Exception as e:
         database.update_user_token(qq)
-        await can_join_activity.finish(Message("获取失败"))
+        await all_activity.finish(Message("获取失败"))
 
 
 @join_activity.handle()
@@ -177,12 +193,16 @@ async def handle_function(event: Event, args: Message = CommandArg()):
     qq = event.get_user_id()
     token = database.get_user_token(qq)
     if id := args.extract_plain_text():
-        join_msg = api.join_activity(token=token[0], sid=token[1], id=id)
-        if join_msg != "-1":
-            await academy_activity.finish(Message(join_msg["message"]))
-        else:
+        try:
+            join_msg = api.join_activity(token=token[0], sid=token[1], id=id)
+            if join_msg != "-1":
+                await academy_activity.finish(Message(join_msg["message"]))
+            else:
+                database.update_user_token(qq)
+                await academy_activity.finish(Message("请求错误"))
+        except Exception as e:
             database.update_user_token(qq)
-            await academy_activity.finish(Message("请求错误"))
+            await all_activity.finish(Message("请求错误"))
 
 
 @auto_push.handle()
@@ -205,45 +225,51 @@ async def handle_function(event: Event):
 @scheduler.scheduled_job("interval", minutes=10, id="job_10_minutes")
 async def update_activity():
     auto_update_list = [row[0] for row in database.get_auto_push()]
-    user_info_list = []
-    for auto_user in auto_update_list:
-        user_info = database.get_user_token(auto_user)
-        user_cid = database.get_user_cid(auto_user)
-        user_info_list.append({"token": user_info[0], "sid": user_info[1], "cid": user_cid})
-    add_activity = database.auto_push(user_info_list)
+    try:
+        user_info_list = []
+        for auto_user in auto_update_list:
+            user_info = database.get_user_token(auto_user)
+            user_cid = database.get_user_cid(auto_user)
+            user_info_list.append({"token": user_info[0], "sid": user_info[1], "cid": user_cid})
+        add_activity = database.auto_push(user_info_list)
 
-    cids = []
-    for cid in api.get_activity_mapping(user_info_list[0]["token"], user_info_list[0]["sid"])["data"]["list"][2][
-        "infoList"]:
-        item = {
-            "id": cid["id"],
-            "name": cid["name"]
-        }
-        cids.append(item)
+        cids = []
+        for cid in api.get_activity_mapping(user_info_list[0]["token"], user_info_list[0]["sid"])["data"]["list"][2][
+            "infoList"]:
+            item = {
+                "id": cid["id"],
+                "name": cid["name"]
+            }
+            cids.append(item)
 
-    msg = ""
-    for activity in add_activity:
-        msg += f'活动名称:{activity["name"]}\n'
-        msg += f'活动分值:{activity["credit"]}\n'
-        msg += f'分值类型:{activity["categoryName"]}\n'
-        for college in cids:
-            if activity["allow_colleg"] is None:
-                activity["allow_colleg"] = "全部学院"
-            elif activity["allow_colleg"] == college["id"]:
-                activity["allow_colleg"] = college["name"]
-        msg += f'所属学院:{activity["allow_colleg"]}\n'
-        msg += f'报名时间:{activity["joinStartTime"]}\n'
-        msg += f'开始时间:{activity["startTime"]}\n'
-        msg += f'结束时间:{activity["endTime"]}\n'
-        msg += f'可参与人数:{activity["allowUserCount"]}\n'
-        msg += f'已报名人数:{activity["joinUserCount"]}\n'
-        msg += f'活动状态:{activity["statusName"]}\n'
-        msg += f'活动ID:{activity["id"]}\n'
-        msg += "\n"
+        msg = ""
+        for activity in add_activity:
+            msg += f'活动名称:{activity["name"]}\n'
+            msg += f'活动分值:{activity["credit"]}\n'
+            msg += f'分值类型:{activity["categoryName"]}\n'
+            for college in cids:
+                if activity["allow_colleg"] is None:
+                    activity["allow_colleg"] = "全部学院"
+                elif activity["allow_colleg"] == college["id"]:
+                    activity["allow_colleg"] = college["name"]
+            msg += f'所属学院:{activity["allow_colleg"]}\n'
+            msg += f'报名时间:{activity["joinStartTime"]}\n'
+            msg += f'开始时间:{activity["startTime"]}\n'
+            msg += f'结束时间:{activity["endTime"]}\n'
+            msg += f'可参与人数:{activity["allowUserCount"]}\n'
+            msg += f'已报名人数:{activity["joinUserCount"]}\n'
+            msg += f'活动状态:{activity["statusName"]}\n'
+            msg += f'活动ID:{activity["id"]}\n'
+            msg += "\n"
 
-    if msg != "":
+        if msg != "":
+            # 调用主动发送消息的函数
+            await send_message_to_users(msg, qq_list=auto_update_list)
+    except Exception as e:
+        for qq in auto_update_list:
+            database.update_user_token(qq)
         # 调用主动发送消息的函数
-        await send_message_to_users(msg, qq_list=auto_update_list)
+        await send_message_to_users("周期错误", qq_list=[2417100121])
 
 
 # 发送消息函数，放在外部可以复用
