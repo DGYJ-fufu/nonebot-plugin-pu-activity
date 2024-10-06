@@ -126,7 +126,7 @@ async def handle_function(event: Event, args: Message = CommandArg()):
     token = database.get_user_token(qq)
     if id := args.extract_plain_text():
         activity_msg = api.get_activity_info(token=token[0], sid=token[1], id=id)
-        if activity_msg != "-1":
+        if activity_msg == "-1":
             await activity_info.finish(Message("内部错误"))
         elif activity_msg == "-2":
             database.update_user_token(qq)
