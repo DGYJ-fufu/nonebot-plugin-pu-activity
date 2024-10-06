@@ -1,7 +1,8 @@
 import os
 import mysql.connector
 # from api import login, get_activity_info, get_activity_list
-from .api import login, get_activity_info, get_activity_list
+from .api import login, get_activity_info, get_activity_list, join_activity
+from .tools import *
 
 
 class DataBase:
@@ -160,3 +161,104 @@ class DataBase:
             msg.append(activity)
 
         return msg
+
+    # 添加预约任务
+    def reservation(self, qq, activity_id, token, sid):
+        self.sql.execute("SELECT activity_id FROM reservation WHERE activity_id = %s AND user_id = %s",
+                         (activity_id, qq,))
+        if len(self.sql.fetchall()) == 0:
+            time = get_datetime()
+            res = get_activity_info(token=token, sid=sid, id=activity_id)
+            if res == "-1":
+                return "-1"
+            elif res == "-2":
+                return "-2"
+            else:
+                reservation_time = res["data"]["baseInfo"][
+                    "joinStartTime"]
+                self.sql.execute(
+                    "INSERT INTO reservation (user_id, activity_id, reservation_time,created_at,updated_at) VALUES (%s, %s, %s, %s, %s)",
+                    (qq, activity_id, reservation_time, time, time))
+                self.sql_connect.commit()
+                return 0
+        else:
+            return 1
+
+    # 自动报名
+    def auto_join(self):
+        self.sql.execute("SELECT id FROM reservation WHERE status = 'pending'")
+        reservations = self.sql.fetchall()
+        try:
+            if len(reservations) > 0:
+                users = []
+                for reservation in reservations:
+                    self.sql.execute("UPDATE reservation SET updated_at = %s WHERE id = %s",
+                                     (get_datetime(), reservation[0],))
+                    self.sql_connect.commit()
+                    self.sql.execute("SELECT user_id,activity_id,reservation_time FROM reservation WHERE id = %s",
+                                     (reservation[0],))
+                    reservation_info = self.sql.fetchall()
+                    self.sql.execute("SELECT token,sid FROM user WHERE qq = %s", (reservation_info[0][0],))
+                    user_info = self.sql.fetchall()
+                    users.append(
+                        {
+                            "id": reservation[0],
+                            "qq": reservation_info[0][0],
+                            "activity_id": reservation_info[0][1],
+                            "reservation_time": reservation_info[0][2].strftime('%Y-%m-%d %H:%M:%S'),
+                            "token": user_info[0][0],
+                            "sid": user_info[0][1]
+                        }
+                    )
+                ok_users = []
+                for user in users:
+                    if datetime.now() > datetime.strptime(user['reservation_time'], "%Y-%m-%d %H:%M:%S"):
+                        res = join_activity(token=user['token'], sid=user['sid'], id=user['activity_id'])
+                        if res == "-1":
+                            self.sql.execute("UPDATE reservation SET status=%s WHERE id = %s",
+                                             ("completed", user["id"],))
+                            self.sql_connect.commit()
+                            ok_user = user
+                            ok_user["code"] = "-1"
+                            ok_users.append(ok_user)
+                        elif res == "-2":
+                            self.update_user_token(user["qq"])
+                            ok_user = user
+                            ok_user["code"] = "-2"
+                            ok_users.append(ok_user)
+                        else:
+                            if res["code"] == 9405 or res["code"] == 0:
+                                self.sql.execute("UPDATE reservation SET status=%s WHERE id = %s",
+                                                 ("completed", user["id"],))
+                                self.sql_connect.commit()
+                                ok_user = user
+                                ok_user["code"] = res["code"]
+                                ok_user["message"] = res["message"]
+                                ok_users.append(ok_user)
+                return ok_users
+            return 0
+        except Exception as e:
+            if len(reservations) > 0:
+                for id in reservations:
+                    self.sql.execute("UPDATE reservation SET status=%s WHERE id = %s",
+                                     ("failed", id[0],))
+                    self.sql_connect.commit()
+            return "-1"
+
+    # 查询预约信息
+    def find_reservation(self, qq):
+        self.sql.execute("SELECT id,activity_id,reservation_time,status FROM reservation WHERE user_id = %s",
+                         (qq,))
+        reservations_info = self.sql.fetchall()
+        if len(reservations_info) > 0:
+            res = []
+            for reservation_info in reservations_info:
+                res.append({
+                    "id": reservation_info[0],
+                    "activity_id": reservation_info[1],
+                    "reservation_time": reservation_info[2].strftime('%Y-%m-%d %H:%M:%S'),
+                    "status": reservation_info[3],
+                })
+            return res
+        else:
+            return 0

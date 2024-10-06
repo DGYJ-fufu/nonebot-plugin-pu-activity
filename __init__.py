@@ -10,6 +10,7 @@ from .config import Config
 
 from .database import DataBase
 from .api import *
+from .tools import *
 
 require("nonebot_plugin_apscheduler")
 
@@ -36,6 +37,8 @@ join_activity = on_command("报名", rule=to_me())
 auto_push = on_command("活动推送", rule=to_me())
 update_token = on_keyword({"刷新令牌"}, rule=to_me())
 help = on_keyword({"帮助"}, rule=to_me())
+find_reservation = on_keyword({"查询预约"}, rule=to_me())
+reservation = on_command("预约", rule=to_me())
 
 
 @user.handle()
@@ -61,6 +64,63 @@ async def _(state: T_State, user_info: str = ArgPlainText()):
                           sid=state["sid"])
     database.update_user_token(state["qq"])
     await user.finish(MessageTemplate("添加的用户信息:\n账号:{username}\n密码:{password}\n学校:{sid}"))
+
+
+@find_reservation.handle()
+async def handle_function(event: Event):
+    qq = event.get_user_id()
+    res = database.find_reservation(qq)
+    if res == 0:
+        await find_reservation.finish(Message("没有预约任务"))
+    else:
+        if len(res) > 0:
+            msg = ""
+            for item in res:
+                msg += f'预约ID:{item["id"]}\n'
+                msg += f'活动ID:{item["activity_id"]}\n'
+                msg += f'预约时间:{item["reservation_time"]}\n'
+                msg += f'任务状态:{item["status"]}\n'
+                msg += '\n'
+            await find_reservation.finish(Message(msg))
+
+
+# 预约活动自动报名
+@reservation.handle()
+async def handle_function(event: Event, args: Message = CommandArg()):
+    qq = event.get_user_id()
+    token = database.get_user_token(qq)
+    if id := args.extract_plain_text():
+        res = database.reservation(qq=qq, activity_id=id, token=token[0], sid=token[1])
+        if res == "-1":
+            await reservation.finish(Message("内部错误"))
+        elif res == "-2":
+            await reservation.finish(Message("请求错误"))
+        elif res == 0:
+            await reservation.finish(Message("预约任务已添加"))
+        elif res == 1:
+            await reservation.finish(Message("活动已预约，请勿重复预约"))
+
+
+# 周期更新活动
+@scheduler.scheduled_job("interval", seconds=10, id="reservation")
+async def auto_reserve():
+    res = database.auto_join()
+    if res == "-1":
+        await send_message_to_users("内部错误", qq_list=[2417100121])
+    elif res == 0:
+        pass
+    else:
+        for join_info in res:
+            if join_info["code"] == "-1":
+                await send_message_to_users("报名API内部错误", qq_list=[join_info["qq"]])
+            elif join_info["code"] == "-2":
+                await send_message_to_users("令牌失效，正在刷新，等待重试...", qq_list=[join_info["qq"]])
+            elif join_info["code"] == 9405:
+                await send_message_to_users(f'活动:{join_info["activity_id"]}\n{join_info["message"]}',
+                                            qq_list=[join_info["qq"]])
+            elif join_info["code"] == 0:
+                await send_message_to_users(f'活动:{join_info["activity_id"]}\n{join_info["message"]}',
+                                            qq_list=[join_info["qq"]])
 
 
 # 获取全部活动列表
@@ -216,7 +276,7 @@ async def handle_function(event: Event, args: Message = CommandArg()):
 # 帮助
 @help.handle()
 async def handle_function(event: Event):
-    msg = "指令列表:\n获取全部活动\n获取学院活动\n获取可参加活动\n添加用户\n报名xxxxxxx\n活动xxxxxxx\n活动推送开启/关闭\n注:xxxx为活动ID"
+    msg = "指令列表:\n获取全部活动\n获取学院活动\n获取可参加活动\n添加用户\n报名xxxxxxx\n活动xxxxxxx\n活动推送开启/关闭\n刷新令牌\n查询预约\n预约xxxxxxx\n注:xxxx为活动ID"
     await academy_activity.finish(Message(msg))
 
 
