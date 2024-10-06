@@ -37,6 +37,7 @@ join_activity = on_command("报名", rule=to_me())
 auto_push = on_command("活动推送", rule=to_me())
 update_token = on_keyword({"刷新令牌"}, rule=to_me())
 help = on_keyword({"帮助"}, rule=to_me())
+my_activity = on_keyword({"我的活动"}, rule=to_me())
 find_reservation = on_keyword({"查询预约"}, rule=to_me())
 reservation = on_command("预约", rule=to_me())
 
@@ -47,7 +48,7 @@ async def _(state: T_State, event: Event):
 
 
 # 添加用户
-@user.got("user_info", prompt=MessageTemplate("请输入用户信息\n格式如下:\n账号:密码:学校全称"))
+@user.got("user_info", prompt=MessageTemplate("⚙️请输入用户信息\n格式如下:\n账号:密码:学校全称"))
 async def _(state: T_State, user_info: str = ArgPlainText()):
     # 获取输入的用户信息
     state["username"], state["password"], state["sid"] = user_info.split(":")
@@ -76,11 +77,12 @@ async def handle_function(event: Event):
         if len(res) > 0:
             msg = ""
             for item in res:
-                msg += f'预约ID:{item["id"]}\n'
-                msg += f'活动ID:{item["activity_id"]}\n'
-                msg += f'预约时间:{item["reservation_time"]}\n'
-                msg += f'任务状态:{item["status"]}\n'
-                msg += '\n'
+                msg += f'🆔预约ID:{item["id"]}\n'
+                msg += f'🆔活动ID:{item["activity_id"]}\n'
+                msg += f'📆预约时间:{item["reservation_time"]}\n'
+                msg += f'⭐️任务状态:{item["status"]}'
+                if item != res[len(res) - 1]:
+                    msg += '\n\n'
             await find_reservation.finish(Message(msg))
 
 
@@ -102,7 +104,7 @@ async def handle_function(event: Event, args: Message = CommandArg()):
 
 
 # 周期更新活动
-@scheduler.scheduled_job("interval", seconds=10, id="reservation")
+@scheduler.scheduled_job("interval", seconds=10, id="reservation",  max_instances=10)
 async def auto_reserve():
     res = database.auto_join()
     if res == "-1":
@@ -137,16 +139,17 @@ async def handle_function(event: Event):
     else:
         msg = ""
         for activity in activity_msg["data"]["list"]:
-            msg += f'活动名称:{activity["name"]}\n'
-            msg += f'活动分值:{activity["credit"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'开始时间:{activity["startTime"]}\n'
-            msg += f'结束时间:{activity["endTime"]}\n'
-            msg += f'可参与人数:{activity["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity["joinUserCount"]}\n'
-            msg += f'活动状态:{activity["statusName"]}\n'
-            msg += f'活动ID:{activity["id"]}\n'
-            msg += "\n"
+            msg += f'✨活动名称:{activity["name"]}\n'
+            msg += f'💯活动分值:{activity["credit"]}\n'
+            msg += f'🕐报名时间:{activity["joinStartTime"]}\n'
+            msg += f'🕒开始时间:{activity["startTime"]}\n'
+            msg += f'🕓结束时间:{activity["endTime"]}\n'
+            msg += f'👉可参与人数:{activity["allowUserCount"]}\n'
+            msg += f'🤚已报名人数:{activity["joinUserCount"]}\n'
+            msg += f'⭐活动状态:{activity["statusName"]}\n'
+            msg += f'🆔活动ID:{activity["id"]}'
+            if activity != activity_msg["data"]["list"][len(activity_msg["data"]["list"]) - 1]:
+                msg += "\n\n"
         await all_activity.finish(Message(msg))
 
 
@@ -165,17 +168,17 @@ async def handle_function(event: Event):
     else:
         msg = ""
         for activity in academy_msg["data"]["list"]:
-            msg += f'活动名称:{activity["name"]}\n'
-            msg += f'活动分值:{activity["credit"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'开始时间:{activity["startTime"]}\n'
-            msg += f'结束时间:{activity["endTime"]}\n'
-            msg += f'可参与人数:{activity["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity["joinUserCount"]}\n'
-            msg += f'活动状态:{activity["statusName"]}\n'
-            msg += f'活动ID:{activity["id"]}\n'
-            msg += "\n"
+            msg += f'✨活动名称:{activity["name"]}\n'
+            msg += f'💯活动分值:{activity["credit"]}\n'
+            msg += f'🕐报名时间:{activity["joinStartTime"]}\n'
+            msg += f'🕒开始时间:{activity["startTime"]}\n'
+            msg += f'🕓结束时间:{activity["endTime"]}\n'
+            msg += f'👉可参与人数:{activity["allowUserCount"]}\n'
+            msg += f'🤚已报名人数:{activity["joinUserCount"]}\n'
+            msg += f'⭐活动状态:{activity["statusName"]}\n'
+            msg += f'🆔活动ID:{activity["id"]}'
+            if activity != academy_msg["data"]["list"][len(academy_msg["data"]["list"]) - 1]:
+                msg += "\n\n"
         await academy_activity.finish(Message(msg))
 
 
@@ -199,19 +202,58 @@ async def handle_function(event: Event, args: Message = CommandArg()):
                 msg += f"所属学院:{activity_msg['allowCollege'][0]['name']}\n"
             else:
                 msg += "所属学院:全部\n"
-            msg += f'活动类型:{activity_msg["categoryName"]}\n'
-            msg += f'可参与人数:{activity_msg["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity_msg["joinUserCount"]}\n'
-            msg += f'报名开始时间:{activity_msg["joinStartTime"]}\n'
-            msg += f'报名结束时间:{activity_msg["joinEndTime"]}\n'
-            msg += f'活动开始时间:{activity_msg["startTime"]}\n'
-            msg += f'活动结束时间:{activity_msg["endTime"]}\n'
-            msg += f'活动地址:{activity_msg["address"]}\n'
-            msg += f'活动简介:{activity_msg["description"]}\n'
-            msg += f'活动状态:{activity_msg["statusName"]}\n'
+            msg += f'🏷️活动类型:{activity_msg["categoryName"]}\n'
+            msg += f'👉可参与人数:{activity_msg["allowUserCount"]}\n'
+            msg += f'🤚已报名人数:{activity_msg["joinUserCount"]}\n'
+            msg += f'🕐报名开始时间:{activity_msg["joinStartTime"]}\n'
+            msg += f'🕑报名结束时间:{activity_msg["joinEndTime"]}\n'
+            msg += f'🕒活动开始时间:{activity_msg["startTime"]}\n'
+            msg += f'🕓活动结束时间:{activity_msg["endTime"]}\n'
+            msg += f'⛱️活动地址:{activity_msg["address"]}\n'
+            msg += f'📜活动简介:{activity_msg["description"]}\n'
+            msg += f'⭐活动状态:{activity_msg["statusName"]}\n'
             await activity_info.finish(msg)
     else:
         await activity_info.finish("请输入活动ID")
+
+
+# 获取我的活动
+@my_activity.handle()
+async def handle_function(event: Event):
+    qq = event.get_user_id()
+    token = database.get_user_token(qq)
+    not_started = find_not_started_activity(token=token[0], sid=token[1])
+    waiting_for_review = find_waiting_for_review_activity(token=token[0], sid=token[1])
+    if not_started == "-1" or waiting_for_review == "-1":
+        await my_activity.finish(Message("内部错误"))
+    elif not_started == "-2" or waiting_for_review == "-2":
+        await my_activity.finish(Message("请求失败"))
+    else:
+        msg = f'📋未开始活动:\n\n'
+        if len(not_started["data"]["list"]) > 0:
+            for activity in not_started["data"]["list"]:
+                msg += f'✨活动名称:{activity["name"]}\n'
+                msg += f'🕑开始时间:{activity["startTime"]}\n'
+                msg += f'🕓结束时间:{activity["endTime"]}\n'
+                msg += f'⛱️活动地址:{activity["address"]}\n'
+                msg += f'🆔活动ID:{activity["id"]}\n\n'
+        else:
+            msg += "暂无活动\n\n"
+
+        msg += f'📝待审核活动:\n\n'
+        if len(waiting_for_review["data"]["list"]) > 0:
+            for activity in waiting_for_review["data"]["list"]:
+                msg += f'✨活动名称:{activity["name"]}\n'
+                msg += f'🕑开始时间:{activity["startTime"]}\n'
+                msg += f'🕓结束时间:{activity["endTime"]}\n'
+                msg += f'⛱️活动地址:{activity["address"]}\n'
+                msg += f'🆔活动ID:{activity["id"]}'
+                if activity != waiting_for_review["data"]["list"][len(waiting_for_review["data"]["list"]) - 1]:
+                    msg += "\n\n"
+        else:
+            msg += "暂无活动"
+
+        await my_activity.finish(Message(msg))
 
 
 # 获取可加入活动
@@ -229,16 +271,17 @@ async def handle_function(event: Event):
     else:
         msg = ""
         for activity in can_join_activity_list:
-            msg += f'活动名称:{activity["name"]}\n'
-            msg += f'活动分值:{activity["credit"]}\n'
-            msg += f'报名时间:{activity["joinStartTime"]}\n'
-            msg += f'开始时间:{activity["startTime"]}\n'
-            msg += f'结束时间:{activity["endTime"]}\n'
-            msg += f'可参与人数:{activity["allowUserCount"]}\n'
-            msg += f'已报名人数:{activity["joinUserCount"]}\n'
-            msg += f'活动状态:{activity["statusName"]}\n'
-            msg += f'活动ID:{activity["id"]}\n'
-            msg += "\n"
+            msg += f'✨活动名称:{activity["name"]}\n'
+            msg += f'💯活动分值:{activity["credit"]}\n'
+            msg += f'🕐报名时间:{activity["joinStartTime"]}\n'
+            msg += f'🕑开始时间:{activity["startTime"]}\n'
+            msg += f'🕓结束时间:{activity["endTime"]}\n'
+            msg += f'👉可参与人数:{activity["allowUserCount"]}\n'
+            msg += f'🤚已报名人数:{activity["joinUserCount"]}\n'
+            msg += f'⭐活动状态:{activity["statusName"]}\n'
+            msg += f'🆔活动ID:{activity["id"]}'
+            if activity != can_join_activity_list[len(can_join_activity_list) - 1]:
+                msg += "\n\n"
         if msg != "":
             await can_join_activity.finish(Message(msg))
         else:
@@ -276,7 +319,7 @@ async def handle_function(event: Event, args: Message = CommandArg()):
 # 帮助
 @help.handle()
 async def handle_function(event: Event):
-    msg = "指令列表:\n获取全部活动\n获取学院活动\n获取可参加活动\n添加用户\n报名xxxxxxx\n活动xxxxxxx\n活动推送开启/关闭\n刷新令牌\n查询预约\n预约xxxxxxx\n注:xxxx为活动ID"
+    msg = "📝指令列表:\n✨获取全部活动\n✨获取学院活动\n✨获取可参加活动\n✨添加用户\n✨报名🆔\n✨活动🆔\n✨活动推送开启/关闭\n✨刷新令牌\n✨查询预约\n✨预约🆔\n✨我的活动\n⚠️注:🆔为活动ID"
     await academy_activity.finish(Message(msg))
 
 
@@ -289,7 +332,7 @@ async def handle_function(event: Event):
 
 
 # 周期更新活动
-@scheduler.scheduled_job("interval", minutes=10, id="job_10_minutes")
+@scheduler.scheduled_job("interval", minutes=10, id="job_10_minutes",  max_instances=10)
 async def update_activity():
     auto_update_list = [row[0] for row in database.get_auto_push()]
     user_info_list = []
@@ -310,23 +353,24 @@ async def update_activity():
 
     msg = ""
     for activity in add_activity:
-        msg += f'活动名称:{activity["name"]}\n'
-        msg += f'活动分值:{activity["credit"]}\n'
-        msg += f'分值类型:{activity["categoryName"]}\n'
+        msg += f'✨活动名称:{activity["name"]}\n'
+        msg += f'💯活动分值:{activity["credit"]}\n'
+        msg += f'🏷️分值类型:{activity["categoryName"]}\n'
         for college in cids:
             if activity["allow_colleg"] is None:
                 activity["allow_colleg"] = "全部学院"
             elif activity["allow_colleg"] == college["id"]:
                 activity["allow_colleg"] = college["name"]
-        msg += f'所属学院:{activity["allow_colleg"]}\n'
-        msg += f'报名时间:{activity["joinStartTime"]}\n'
-        msg += f'开始时间:{activity["startTime"]}\n'
-        msg += f'结束时间:{activity["endTime"]}\n'
-        msg += f'可参与人数:{activity["allowUserCount"]}\n'
-        msg += f'已报名人数:{activity["joinUserCount"]}\n'
-        msg += f'活动状态:{activity["statusName"]}\n'
-        msg += f'活动ID:{activity["id"]}\n'
-        msg += "\n"
+        msg += f'🏫所属学院:{activity["allow_colleg"]}\n'
+        msg += f'🕐报名时间:{activity["joinStartTime"]}\n'
+        msg += f'🕑开始时间:{activity["startTime"]}\n'
+        msg += f'🕓结束时间:{activity["endTime"]}\n'
+        msg += f'👉可参与人数:{activity["allowUserCount"]}\n'
+        msg += f'🤚已报名人数:{activity["joinUserCount"]}\n'
+        msg += f'⭐️活动状态:{activity["statusName"]}\n'
+        msg += f'🆔活动ID:{activity["id"]}'
+        if activity != add_activity[len(add_activity) - 1]:
+            msg += "\n\n"
 
     if msg != "":
         # 调用主动发送消息的函数

@@ -184,4 +184,46 @@ def get_activity_mapping(token, sid):
     except Exception as e:
         return "-1"
 
-# 获取预约任务
+
+# 查询我的活动(未开始)
+def find_not_started_activity(token, sid):
+    try:
+        conn = http.client.HTTPSConnection("apis.pocketuni.net")
+        payload = json.dumps({
+            "type": 1,
+            "page": 1,
+            "limit": 20
+        })
+        headers = Headers_getlist.copy()
+        headers["Authorization"] = f"Bearer {token}:{sid}"
+        conn.request("POST", "/apis/activity/myList/new", payload, headers)
+        res = conn.getresponse()
+        data = res.read().decode("utf-8")
+        if json.loads(data)["code"] == 0:
+            return json.loads(data)
+        else:
+            return "-2"
+    except Exception as e:
+        return "-1"
+
+
+# 查询我的活动(待审核)
+def find_waiting_for_review_activity(token, sid):
+    try:
+        conn = http.client.HTTPSConnection("apis.pocketuni.net")
+        payload = json.dumps({
+            "type": 5,
+            "page": 1,
+            "limit": 20
+        })
+        headers = Headers_getlist.copy()
+        headers["Authorization"] = f"Bearer {token}:{sid}"
+        conn.request("POST", "/apis/activity/myList/new", payload, headers)
+        res = conn.getresponse()
+        data = res.read().decode("utf-8")
+        if json.loads(data)["code"] == 0:
+            return json.loads(data)
+        else:
+            return "-2"
+    except Exception as e:
+        return "-1"
