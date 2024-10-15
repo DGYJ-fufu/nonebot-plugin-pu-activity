@@ -1,0 +1,7 @@
+httpx>=1.0.0b0
+orjson>=3.10.7
+SQLAlchemy>=2.0.35
+pydantic>=2.9.2
+APScheduler>=3.10.4
+aiosqlite>=0.20.0
+
