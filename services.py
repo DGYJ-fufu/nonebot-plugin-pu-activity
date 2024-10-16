@@ -359,8 +359,9 @@ async def modify_reservation_status(qq: int, activity_id: int, status: int):
         if activity_info is None:
             return None
         else:
+            activity_info = activity_info.to_dict()
             activity_info["status"] = status
-            await ReservationCRUD.update_reservation(session, activity_info["reservation_id"], activity_info)
+            await ReservationCRUD.update_reservation(session, activity_info["id"], activity_info)
             return activity_info
 
 
