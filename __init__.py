@@ -36,8 +36,10 @@ activity_info = on_command("活动", rule=to_me())  # 活动信息
 join_activity = on_command("报名", rule=to_me())  # 活动报名
 reservation = on_command("预约", rule=to_me())  # 活动预约
 find_reservation = on_keyword({"查询预约"}, rule=to_me())  # 查询预约
+remove_reservation = on_command("删除预约", rule=to_me())  # 删除预约
 update_token = on_keyword({"刷新token"}, rule=to_me())  # 刷新token
-help_cmd = on_keyword({"帮助"}, rule=to_me())
+my_credit = on_keyword({"查询分数"}, rule=to_me())  # 查询分数
+help_cmd = on_keyword({"帮助"}, rule=to_me())  # 帮助
 
 # 消息事件处理函数
 user_add_handler(user_add, service)  # 添加或更新用户数据
@@ -49,8 +51,10 @@ activity_info_handler(activity_info, service)  # 活动信息
 join_activity_handler(join_activity, service)  # 活动报名
 reservation_handler(reservation, service, scheduler)  # 活动预约
 find_reservation_handler(find_reservation, scheduler)  # 查询预约
+remove_reservation_handler(remove_reservation, scheduler)  # 删除预约
 update_token_handler(update_token, service)  # 刷新token
-help_cmd_handler(help_cmd)
+my_credit_handler(my_credit, service)  # 查询分数
+help_cmd_handler(help_cmd)  # 帮助
 
 # 定时任务初始化
 asyncio.run(reservation_init(service, scheduler))
@@ -61,5 +65,12 @@ scheduler.add_job(  # 新活动提醒
     "interval",
     minutes=5,
     id="job_1",
+    args=[service]
+)
+scheduler.add_job(  # 周期检查预约时间
+    reservation_info_update,
+    "interval",
+    hours=3,
+    id="job_2",
     args=[service]
 )

@@ -315,6 +315,8 @@ def reservation_handler(matcher: Type[Matcher], service: APIService, scheduler):
                 res = await reservation_add_activity(service, qq, int(activity_id), scheduler)
                 if res is None:
                     await matcher.finish(MessageTemplate("添加任务失败"))
+                elif res == 1:
+                    await matcher.finish(MessageTemplate("任务添加错误,请检查任务信息是否重复"))
                 else:
                     await matcher.finish(MessageTemplate("添加成功"))
 
@@ -336,6 +338,20 @@ def find_reservation_handler(matcher: Type[Matcher], scheduler):
             await matcher.finish(MessageTemplate(res))
 
 
+def remove_reservation_handler(matcher: Type[Matcher], scheduler):
+    """删除预约"""
+
+    @matcher.handle()
+    async def _(event: Event, args: Message = CommandArg()):
+        qq = int(event.get_user_id())
+        if activity_id := args.extract_plain_text():
+            res = await remove_reservation(qq, int(activity_id), scheduler)
+            if res is None:
+                await matcher.finish(MessageTemplate("删除失败,请检查活动信息"))
+            else:
+                await matcher.finish(MessageTemplate(f"{activity_id}删除成功"))
+
+
 def update_token_handler(matcher: Type[Matcher], service: APIService):
     """刷新令牌消息事件处理函数"""
 
@@ -355,6 +371,27 @@ def update_token_handler(matcher: Type[Matcher], service: APIService):
             await matcher.finish(MessageTemplate("用户数据错误,请检查用户数据"))
 
 
+def my_credit_handler(matcher: Type[Matcher], service: APIService):
+    """查询分数"""
+
+    @matcher.handle()
+    async def _(event: Event):
+        qq = int(event.get_user_id())
+        res = await find_my_credit(service, qq)
+        if res is None:
+            await update_token(service, qq)
+            await matcher.finish(MessageTemplate("请求错误,刷新token,请重试"))
+        elif res == 1:
+            await matcher.finish(MessageTemplate("用户数据错误,请检查用户数据"))
+        elif res == 2:
+            await update_token(service, qq)
+            await matcher.finish(MessageTemplate("请求错误,刷新token,请重试"))
+        else:
+            msg = f'实践学分:{res["credit"]}\n'
+            msg += f'诚信值:{res["cx"]}'
+            await matcher.finish(MessageTemplate(msg))
+
+
 def help_cmd_handler(matcher: Type[Matcher]):
     """帮助消息事件处理函数"""
 
@@ -371,7 +408,9 @@ def help_cmd_handler(matcher: Type[Matcher]):
             "✨报名🆔\n"
             "✨预约🆔\n"
             "✨查询预约\n"
+            "✨删除预约🆔\n"
             "✨刷新token\n"
+            "✨查询分数\n"
             "⚠️注:🆔为活动ID"
         )
         await matcher.finish(Message(msg))

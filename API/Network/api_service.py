@@ -201,5 +201,11 @@ class APIService:
             sid=sid
         )
 
-
-
+    async def info(self, token: str, sid: int):
+        """简易信息"""
+        return await self._request(
+            'POST',
+            "/apis/user/pc-info",
+            token=token,
+            sid=sid
+        )

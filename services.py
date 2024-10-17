@@ -339,6 +339,7 @@ async def get_reservation_qq(qq: int):
         else:
             msg = ""
             for reservation in reservations:
+                msg += f'预约ID:{reservation.id}\n'
                 msg += f'活动ID:{reservation.activity_id}\n'
                 msg += f'预约时间:{datetime.strftime(reservation.reservation_time, "%Y-%m-%d %H:%M:%S")}\n'
                 if reservation.status == 0:
@@ -377,13 +378,17 @@ async def reservation_add_activity(service: APIService, qq: int, activity_id: in
         reservation_time = datetime.strptime(activity_info["data"]["baseInfo"]["joinStartTime"],
                                              "%Y-%m-%d %H:%M:%S")
 
-        # 添加定时任务
-        scheduler.add_job(
-            reservation_join,
-            "date",
-            run_date=reservation_time,
-            args=[service, qq, int(activity_id)]
-        )
+        try:
+            # 添加定时任务
+            scheduler.add_job(
+                reservation_join,
+                "date",
+                run_date=reservation_time,
+                id=f"{qq}_{activity_id}",
+                args=[service, qq, int(activity_id)]
+            )
+        except Exception as e:
+            return 1
 
         # 预约任务持久化
         activity["reservation_time"] = reservation_time
@@ -423,7 +428,37 @@ async def reservation_init(service: APIService, scheduler):
                     reservation_join,
                     "date",
                     run_date=reservation.reservation_time,
+                    id=f"{reservation.user_id}_{reservation.activity_id}",
                     args=[service, reservation.user_id, int(reservation.activity_id)]
                 )
     nonebot.logger.info('预约任务初始化完成')
     nonebot.logger.info(f'预约任务数量:{len(scheduler.get_jobs())}')
+
+
+async def remove_reservation(qq: int, activity_id: int, scheduler):
+    """删除预约活动"""
+    async with AsyncSessionManager() as session:
+        activity_info = await ReservationCRUD.get_reservation_qq_id(session, qq, activity_id)
+        if activity_info is not None:
+            activity_info = activity_info.to_dict()
+            await ReservationCRUD.delete_reservation(session, activity_info["id"])
+            scheduler.remove_job(f"{qq}_{activity_id}")
+            return 1
+        else:
+            return None
+
+
+async def find_my_credit(service: APIService, qq: int):
+    """查询分数"""
+    user = await get_user(qq)
+    if user is not None:
+        info = await service.info(user["token"], user["sid"])
+        if info is not None:
+            if info["code"] == 0:
+                return info["data"]
+            else:
+                return 2
+        else:
+            return None
+    else:
+        return 1

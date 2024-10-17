@@ -13,26 +13,30 @@ async def push_handler(service: APIService):
     for push_user_info in push_user_list:
         activities = await get_activity_list(service, push_user_info["users"][0].qq)
         if activities:
-            # 获取新活动
-            activity_list = []
-            for activity in activities:
-                result = await database_get_activity(activity["id"])
-                if result is not None:
-                    continue
-                else:
-                    activity_list.append(activity)
-                    await database_add_activity(activity["id"])
-            # 获取新活动推送对象
-            push_users = []
-            for user in push_user_info["users"]:
-                push_users.append(user.qq)
-            # 数据封装
-            add_activity_list.append(
-                {
-                    "push_activities": activity_list,
-                    "push_users": push_users
-                }
-            )
+            if activities == 2:
+                await update_token(service, push_user_info["users"][0].qq)
+                return
+            else:
+                # 获取新活动
+                activity_list = []
+                for activity in activities:
+                    result = await database_get_activity(activity["id"])
+                    if result is not None:
+                        continue
+                    else:
+                        activity_list.append(activity)
+                        await database_add_activity(activity["id"])
+                # 获取新活动推送对象
+                push_users = []
+                for user in push_user_info["users"]:
+                    push_users.append(user.qq)
+                # 数据封装
+                add_activity_list.append(
+                    {
+                        "push_activities": activity_list,
+                        "push_users": push_users
+                    }
+                )
     # 输出推送列表
     nonebot.logger.info(add_activity_list)
     # 活动推送
@@ -74,3 +78,18 @@ async def push_handler(service: APIService):
                     msg += "\n\n"
             await send_message_to_users(msg, add_push_list["push_users"])
     nonebot.logger.info("End time:{}", datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"))  # 日志输出
+
+
+async def reservation_info_update(service: APIService):
+    """周期检查预约活动时间是否有更改"""
+    async with AsyncSessionManager() as session:
+        reservations = await ReservationCRUD.get_all_reservations(session)
+        for reservation in reservations:
+            res = await get_activity_info(service, reservation.user_id, reservation.activity_id)
+            if res is not None and res != 1 and res != 2:
+                if datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
+                                     "%Y-%m-%d %H:%M:%S") != reservation.reservation_time:
+                    cache = reservation.to_dict()
+                    cache["reservation_time"] = datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
+                                                                  "%Y-%m-%d %H:%M:%S")
+                    await ReservationCRUD.update_reservation(session, reservation.id, cache)
