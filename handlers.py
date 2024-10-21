@@ -392,6 +392,44 @@ def my_credit_handler(matcher: Type[Matcher], service: APIService):
             await matcher.finish(MessageTemplate(msg))
 
 
+def group_add_handler(matcher: Type[Matcher], service: APIService):
+    """添加群推送"""
+
+    @matcher.got("school", prompt=MessageTemplate("⚙️请输入学校全称"))
+    async def _(event: Event, school: str = ArgPlainText()):
+        if school:
+            group_id = event.get_session_id().split("_")[1]
+            nonebot.logger.info("GroupID:" + group_id)
+            res = await create_group(service, int(group_id), school)
+            if res == 0:
+                await matcher.finish(MessageTemplate("添加完成"))
+            else:
+                await matcher.finish(MessageTemplate("添加失败，请检查信息"))
+
+
+def auto_push_group_handler(matcher: Type[Matcher]):
+    """切换群推送状态"""
+
+    @matcher.handle()
+    async def _(event: Event, args: Message = CommandArg()):
+        group_id = int(event.get_session_id().split("_")[1])
+        nonebot.logger.info("GroupID:" + str(group_id))
+        if status := args.extract_plain_text():
+            if status == "开启":
+                res = await switch_group_push(group_id, 1)
+                if res is None:
+                    await matcher.finish(MessageTemplate("失败"))
+                else:
+                    await matcher.finish(MessageTemplate("成功"))
+
+            elif status == "关闭":
+                res = await switch_group_push(group_id, 0)
+                if res is None:
+                    await matcher.finish(MessageTemplate("失败"))
+                else:
+                    await matcher.finish(MessageTemplate("成功"))
+
+
 def help_cmd_handler(matcher: Type[Matcher]):
     """帮助消息事件处理函数"""
 

@@ -270,6 +270,13 @@ async def send_message_to_users(msg: str, qq_list: list):
         await bot.send_private_msg(user_id=qq, message=msg)
 
 
+async def send_message_to_group(msg: str, group_list: list):
+    """发送群消息函数，可以复用"""
+    bot = get_bot()
+    for group in group_list:
+        await bot.send_group_msg(group_id=group, message=msg)
+
+
 async def database_get_activities():
     """获取数据库中活动列表"""
     async with AsyncSessionManager() as session:
@@ -462,3 +469,54 @@ async def find_my_credit(service: APIService, qq: int):
             return None
     else:
         return 1
+
+
+async def get_push_group():
+    """获取订阅群号"""
+    async with AsyncSessionManager() as session:
+        push_group_list = []
+        sids = await GroupCRUD.get_push_sids(session)
+        if sids is not None:
+            for sid in sids:
+                groups = await GroupCRUD.get_push_sid(session, sid)
+                push_group_list.append({
+                    "sid": sid,
+                    "groups": groups
+                })
+                nonebot.logger.info("群推送列表:" + str(push_group_list))
+        return push_group_list
+
+
+async def create_group(service: APIService, group_id: int, school: str):
+    """添加群推送"""
+    group = {
+        'group_id': group_id
+    }
+
+    sids = await service.get_sid()
+    for sid_item in sids["data"]["list"]:
+        if sid_item["name"] == school:
+            group["sid"] = sid_item["id"]
+            break
+        else:
+            continue
+
+    async with AsyncSessionManager() as session:
+        result = await GroupCRUD.create_group(session, group)
+        if result is not None:
+            return 0
+        else:
+            return 1
+
+
+async def switch_group_push(group_id: int, status: int):
+    """切换群推送状态"""
+    async with AsyncSessionManager() as session:
+        group = await GroupCRUD.get_groups_id(session, group_id)
+        if group is None:
+            return None
+        else:
+            group = group.to_dict()
+            group["push"] = status
+            await GroupCRUD.update_group(session, group_id, group)
+            return 0

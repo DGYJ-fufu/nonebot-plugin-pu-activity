@@ -1,7 +1,10 @@
 import asyncio
 
 import nonebot
-from nonebot import get_plugin_config, on_keyword, on_command, require
+from nonebot import get_plugin_config, on_keyword, on_command, on_request, require
+from nonebot.adapters.onebot.v11 import FriendRequestEvent
+from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
+from nonebot.permission import *
 from nonebot.plugin import PluginMetadata
 from nonebot.rule import to_me
 
@@ -40,6 +43,18 @@ remove_reservation = on_command("删除预约", rule=to_me())  # 删除预约
 update_token = on_keyword({"刷新token"}, rule=to_me())  # 刷新token
 my_credit = on_keyword({"查询分数"}, rule=to_me())  # 查询分数
 help_cmd = on_keyword({"帮助"}, rule=to_me())  # 帮助
+# 添加群推送
+group_add = on_command(
+    "添加群推送",
+    rule=to_me(),
+    permission=SUPERUSER | GROUP_ADMIN | GROUP_OWNER
+)
+# 活动推送开关（群推送）
+auto_push_group = on_command(
+    "群推送",
+    rule=to_me(),
+    permission=SUPERUSER | GROUP_ADMIN | GROUP_OWNER
+)
 
 # 消息事件处理函数
 user_add_handler(user_add, service)  # 添加或更新用户数据
@@ -54,6 +69,8 @@ find_reservation_handler(find_reservation, scheduler)  # 查询预约
 remove_reservation_handler(remove_reservation, scheduler)  # 删除预约
 update_token_handler(update_token, service)  # 刷新token
 my_credit_handler(my_credit, service)  # 查询分数
+group_add_handler(group_add, service)  # 添加群推送
+auto_push_group_handler(auto_push_group)  # 活动推送开关（群推送）
 help_cmd_handler(help_cmd)  # 帮助
 
 # 定时任务初始化
@@ -74,3 +91,11 @@ scheduler.add_job(  # 周期检查预约时间
     id="job_2",
     args=[service]
 )
+
+# 自动通过好友申请
+auto_accept_friend = on_request()
+
+
+@auto_accept_friend.handle()
+async def handle_friend_request(event: FriendRequestEvent):
+    await event.approve()

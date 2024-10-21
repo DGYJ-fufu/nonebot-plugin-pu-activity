@@ -102,3 +102,24 @@ class Activity(Base):
 
 # 关系定义：一个用户可以有多个预约
 User.reservations = relationship('Reservation', order_by=Reservation.id, back_populates='user')
+
+
+class Group(Base):
+    __tablename__ = 'group'  # 数据库中表名
+
+    # 群号，主键
+    group_id = Column(Integer, primary_key=True)
+    # 是否推送通知，默认值为 0（不推送）
+    push = Column(Integer, default=0, nullable=False)
+    # SID，非空
+    sid = Column(BigInteger, nullable=False)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}(group_id={self.group_id}, push={self.push}, sid={self.sid})>"
+
+    def to_dict(self):
+        return {
+            'group_id': self.group_id,
+            'push': self.push,
+            'sid': self.sid
+        }

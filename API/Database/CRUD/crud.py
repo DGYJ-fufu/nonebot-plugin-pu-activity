@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from ..Models.models import User, Reservation, Activity
+from ..Models.models import User, Reservation, Activity, Group
 
 
 class UserCRUD:
@@ -149,3 +149,50 @@ class ActivityCRUD:
             await session.delete(activity)  # 删除活动
             await session.commit()  # 提交事务
         return activity
+
+
+class GroupCRUD:
+
+    @staticmethod
+    async def create_group(session: AsyncSession, group_data: dict):
+        """创建活动并保存到数据库。"""
+        group = Group(**group_data)
+        session.add(group)
+        await session.commit()  # 提交事务
+        await session.refresh(group)  # 刷新以获取数据库中的新数据
+        return group
+
+    @staticmethod
+    async def get_groups_id(session: AsyncSession, group_id: int):
+        """根据群号获取信息"""
+        result = await session.execute(select(Group).where(Group.group_id == group_id))
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def update_group(session: AsyncSession, group_id: int, update_data: dict):
+        """更新群信息。"""
+        group = await GroupCRUD.get_groups_id(session, group_id)
+        if group:
+            for key, value in update_data.items():
+                setattr(group, key, value)  # 更新活动属性
+            await session.commit()  # 提交事务
+            await session.refresh(group)  # 刷新以获取数据库中的新数据
+        return group
+
+    @staticmethod
+    async def get_push(session: AsyncSession):
+        """获取推送群号"""
+        result = await session.execute(select(Group).where(Group.push == 1))
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_push_sid(session: AsyncSession, sid: int):
+        """获取某一学校的推送群号"""
+        result = await session.execute(select(Group).where((Group.push == 1) & (Group.sid == sid)))
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_push_sids(session: AsyncSession):
+        """获取推送的sid"""
+        result = await session.execute(select(Group.sid).where(Group.push == 1))
+        return result.scalars().all()

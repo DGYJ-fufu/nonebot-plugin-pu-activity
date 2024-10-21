@@ -3,3 +3,4 @@
 /test/test_api_service.py
 /test/test_services.py
 /test/test_user.py
+/test/test_group.py
