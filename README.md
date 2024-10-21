@@ -15,7 +15,7 @@
 - **预约活动自动报名**: 实现活动的自动报名功能。
 - **查询已报名活动**: 查看用户已报名的活动列表。
 - **查询学分**: 查询用户的学分情况。
-
+- **新活动群推送**:QQ群可以订阅新活动的推送通知。(需要订阅的学校已经存在用户)
 
 ## 使用
 
@@ -76,6 +76,19 @@ create table reservation
     reservation_time DATETIME      not null,
     status           INT default 0 not null,
     created_at       DATETIME      not null
+);
+```
+
+### 群推送表 (group)
+
+```sql
+create table "group"
+(
+    group_id integer              not null
+        constraint group_pk
+            primary key,
+    push     tinyint(1) default 0 not null,
+    sid      integer              not null
 );
 ```
 
