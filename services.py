@@ -411,14 +411,44 @@ async def reservation_join(service: APIService, qq: int, activity_id: int):
     """预约活动报名"""
     res = await join_activity(service, qq, activity_id)
     if res is None:
-        await send_message_to_users("请求失败", [qq])
-        await modify_reservation_status(qq, activity_id, 2)
+        res = await update_token(service, qq)
+        if res == 0:
+            res = await join_activity(service, qq, activity_id)
+            if res is not None and res != 1 and res != 2:
+                await send_message_to_users(str(res), [qq])
+                await modify_reservation_status(qq, activity_id, 1)
+            else:
+                await send_message_to_users("请求失败", [qq])
+                await modify_reservation_status(qq, activity_id, 2)
+        else:
+            await send_message_to_users("请求失败", [qq])
+            await modify_reservation_status(qq, activity_id, 2)
     elif res == 1:
-        await send_message_to_users("用户信息错误", [qq])
-        await modify_reservation_status(qq, activity_id, 2)
+        res = await update_token(service, qq)
+        if res == 0:
+            res = await join_activity(service, qq, activity_id)
+            if res is not None and res != 1 and res != 2:
+                await send_message_to_users(str(res), [qq])
+                await modify_reservation_status(qq, activity_id, 1)
+            else:
+                await send_message_to_users("用户信息错误", [qq])
+                await modify_reservation_status(qq, activity_id, 2)
+        else:
+            await send_message_to_users("用户信息错误", [qq])
+            await modify_reservation_status(qq, activity_id, 2)
     elif res == 2:
-        await send_message_to_users("用户token失效", [qq])
-        await modify_reservation_status(qq, activity_id, 2)
+        res = await update_token(service, qq)
+        if res == 0:
+            res = await join_activity(service, qq, activity_id)
+            if res is not None and res != 1 and res != 2:
+                await send_message_to_users(str(res), [qq])
+                await modify_reservation_status(qq, activity_id, 1)
+            else:
+                await send_message_to_users("用户token失效", [qq])
+                await modify_reservation_status(qq, activity_id, 2)
+        else:
+            await send_message_to_users("用户token失效", [qq])
+            await modify_reservation_status(qq, activity_id, 2)
     else:
         await send_message_to_users(str(res), [qq])
         await modify_reservation_status(qq, activity_id, 1)
