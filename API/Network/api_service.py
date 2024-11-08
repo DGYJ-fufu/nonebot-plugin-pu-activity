@@ -12,9 +12,9 @@ def get_headers() -> Dict[str, str]:
     """获取请求头信息"""
     return {
         "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        # "Connection": "keep-alive",
+        "Accept-Encoding": " gzip, deflate, br, zstd",
+        "Accept-Language": " zh-CN,zh;q=0.9",
+        "Authorization": "Bearer :0",
         "DNT": "1",
         "Host": "apis.pocketuni.net",
         "Origin": "https://class.pocketuni.net",
@@ -22,7 +22,10 @@ def get_headers() -> Dict[str, str]:
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+        "sec-ch-ua": '"Chromium";v="130", "Microsoft Edge";v="130", "Not?A_Brand";v="99"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"'
     }
 
 
