@@ -1,4 +1,5 @@
 import nonebot
+import asyncio
 from datetime import datetime
 from nonebot import get_bot
 from .API.Database.CRUD.crud import *
@@ -257,6 +258,8 @@ async def join_activity(service: APIService, qq: int, activity_id: int):
             return None
         elif res["code"] == 401:
             return 2
+        elif res["code"] == 500:
+            return 3
         else:
             nonebot.logger.info(res["message"])
             return res["message"]
@@ -407,48 +410,40 @@ async def reservation_add_activity(service: APIService, qq: int, activity_id: in
                 return activity
 
 
-async def reservation_join(service: APIService, qq: int, activity_id: int):
-    """预约活动报名"""
+async def try_join_activity(service: APIService, qq: int, activity_id: int):
+    """尝试在更新 token 后再次加入活动"""
     res = await join_activity(service, qq, activity_id)
     if res is None:
         res = await update_token(service, qq)
         if res == 0:
             res = await join_activity(service, qq, activity_id)
-            if res is not None and res != 1 and res != 2:
-                await send_message_to_users(str(res), [qq])
-                await modify_reservation_status(qq, activity_id, 1)
-            else:
-                await send_message_to_users("请求失败", [qq])
-                await modify_reservation_status(qq, activity_id, 2)
-        else:
-            await send_message_to_users("请求失败", [qq])
-            await modify_reservation_status(qq, activity_id, 2)
+    return res
+
+
+async def reservation_join(service: APIService, qq: int, activity_id: int):
+    """预约活动报名"""
+    res = await join_activity(service, qq, activity_id)
+
+    if res == 3:
+        # 如果返回 res == 3，表示请求频率限制，延迟 2 秒后重新请求
+        await asyncio.sleep(2)
+        res = await join_activity(service, qq, activity_id)
+
+    if res not in [1, 2, 3]:  # 如果第一次加入失败，处理 token 更新
+        res = await try_join_activity(service, qq, activity_id)
+
+    if res is None:
+        await send_message_to_users("请求失败", [qq])
+        await modify_reservation_status(qq, activity_id, 2)
     elif res == 1:
-        res = await update_token(service, qq)
-        if res == 0:
-            res = await join_activity(service, qq, activity_id)
-            if res is not None and res != 1 and res != 2:
-                await send_message_to_users(str(res), [qq])
-                await modify_reservation_status(qq, activity_id, 1)
-            else:
-                await send_message_to_users("用户信息错误", [qq])
-                await modify_reservation_status(qq, activity_id, 2)
-        else:
-            await send_message_to_users("用户信息错误", [qq])
-            await modify_reservation_status(qq, activity_id, 2)
+        await send_message_to_users("用户信息错误", [qq])
+        await modify_reservation_status(qq, activity_id, 2)
     elif res == 2:
-        res = await update_token(service, qq)
-        if res == 0:
-            res = await join_activity(service, qq, activity_id)
-            if res is not None and res != 1 and res != 2:
-                await send_message_to_users(str(res), [qq])
-                await modify_reservation_status(qq, activity_id, 1)
-            else:
-                await send_message_to_users("用户token失效", [qq])
-                await modify_reservation_status(qq, activity_id, 2)
-        else:
-            await send_message_to_users("用户token失效", [qq])
-            await modify_reservation_status(qq, activity_id, 2)
+        await send_message_to_users("用户token失效", [qq])
+        await modify_reservation_status(qq, activity_id, 2)
+    elif res == 3:
+        await send_message_to_users("点击太频繁，请稍后再试", [qq])
+        await modify_reservation_status(qq, activity_id, 2)
     else:
         await send_message_to_users(str(res), [qq])
         await modify_reservation_status(qq, activity_id, 1)
