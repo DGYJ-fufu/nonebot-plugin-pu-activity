@@ -133,8 +133,13 @@ async def cyclic_update_token(service: APIService):
     """周期更新token"""
     async with AsyncSessionManager() as session:
         users = await UserCRUD.get_all_qq(session)
+        nonebot.logger.info("检查Token用户:{}", str(users))
         for user in users:
             res = await find_my_credit(service, user)
             if res == 2:
-                await update_token(service, user)
-
+                nonebot.logger.info("Token失效用户:{}", user)
+                res = await update_token(service, user)
+                if res == 0:
+                    nonebot.logger.info("Token失效用户{},更新成功", user)
+                else:
+                    nonebot.logger.info("Token失效用户{},更新失败", user)
