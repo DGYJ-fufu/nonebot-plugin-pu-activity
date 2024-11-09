@@ -94,7 +94,7 @@ scheduler.add_job(  # 周期检查预约时间
 scheduler.add_job(  # 周期检查token是否失效
     cyclic_update_token,
     "interval",
-    minutes=1,
+    hours=4,
     id="job_3",
     args=[service]
 )
