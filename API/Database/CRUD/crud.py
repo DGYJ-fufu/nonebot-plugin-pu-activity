@@ -20,6 +20,18 @@ class UserCRUD:
         return result.scalar_one_or_none()  # 获取单个用户或 None
 
     @staticmethod
+    async def get_all_qq(session: AsyncSession):
+        """获取数据库中的所有QQ"""
+        result = await session.execute(select(User.qq))
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_all_token(session: AsyncSession):
+        """获取数据库中的所有Token"""
+        result = await session.execute(select(User.token))
+        return result.scalars().all()
+
+    @staticmethod
     async def get_push_user(session: AsyncSession, sid: int):
         """根据sid获取数据库订阅用户信息."""
         result = await session.execute(select(User).where((User.sid == sid) & (User.push == 1)))

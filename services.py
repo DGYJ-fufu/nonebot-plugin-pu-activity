@@ -410,39 +410,9 @@ async def reservation_add_activity(service: APIService, qq: int, activity_id: in
                 return activity
 
 
-async def try_join_activity(service: APIService, qq: int, activity_id: int):
-    """尝试在更新 token 后再次加入活动"""
-    res = await join_activity(service, qq, activity_id)
-    if res is None:
-        res = await update_token(service, qq)
-        if res == 0:
-            res = await join_activity(service, qq, activity_id)
-    return res
-
-
 async def reservation_join(service: APIService, qq: int, activity_id: int):
     """预约活动报名"""
     res = await join_activity(service, qq, activity_id)
-
-    retry_attempts = 3  # 最大重试次数
-    retry_delay = 2.4  # 初始延迟时间（秒）
-
-    while res == 3 and retry_attempts > 0:
-        # 如果返回 res == 3，表示请求频率限制，发送重试消息
-        await send_message_to_users(f"您的请求因为点击太频繁正在重试，请稍候。重试次数: {4 - retry_attempts}", [qq])
-        nonebot.logger.info(f"请求频繁，等待 {retry_delay} 秒后重试...")
-        await asyncio.sleep(retry_delay)
-
-        # 执行重试请求
-        res = await join_activity(service, qq, activity_id)
-        retry_attempts -= 1
-        retry_delay *= 2  # 每次重试时增加延迟（指数退避）
-
-    # 如果不是频率限制，尝试更新 token
-    if res not in [1, 2, 3]:  # 如果第一次加入失败，处理 token 更新
-        res = await try_join_activity(service, qq, activity_id)
-
-    # 根据返回状态进行处理
     if res is None:
         await send_message_to_users("请求失败", [qq])
         await modify_reservation_status(qq, activity_id, 2)
@@ -451,9 +421,6 @@ async def reservation_join(service: APIService, qq: int, activity_id: int):
         await modify_reservation_status(qq, activity_id, 2)
     elif res == 2:
         await send_message_to_users("用户token失效", [qq])
-        await modify_reservation_status(qq, activity_id, 2)
-    elif res == 3:
-        await send_message_to_users("点击太频繁，请稍后再试", [qq])
         await modify_reservation_status(qq, activity_id, 2)
     else:
         await send_message_to_users(str(res), [qq])

@@ -127,3 +127,14 @@ async def reservation_info_update(service: APIService):
                     cache["reservation_time"] = datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
                                                                   "%Y-%m-%d %H:%M:%S")
                     await ReservationCRUD.update_reservation(session, reservation.id, cache)
+
+
+async def cyclic_update_token(service: APIService):
+    """周期更新token"""
+    async with AsyncSessionManager() as session:
+        users = await UserCRUD.get_all_qq(session)
+        for user in users:
+            res = await find_my_credit(service, user)
+            if res == 2:
+                await update_token(service, user)
+

@@ -91,6 +91,13 @@ scheduler.add_job(  # 周期检查预约时间
     id="job_2",
     args=[service]
 )
+scheduler.add_job(  # 周期检查token是否失效
+    cyclic_update_token,
+    "interval",
+    minutes=1,
+    id="job_3",
+    args=[service]
+)
 
 # 自动通过好友申请
 auto_accept_friend = on_request()
