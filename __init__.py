@@ -87,9 +87,9 @@ scheduler.add_job(  # 新活动提醒
 scheduler.add_job(  # 周期检查预约时间
     reservation_info_update,
     "interval",
-    hours=3,
+    hours=1,
     id="job_2",
-    args=[service]
+    args=[service, scheduler]
 )
 scheduler.add_job(  # 周期检查token是否失效
     cyclic_update_token,

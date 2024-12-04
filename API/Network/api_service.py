@@ -1,6 +1,8 @@
 import httpx
 import logging
 import orjson
+import nonebot
+from datetime import datetime
 from typing import Optional, Any, Dict
 
 # 设置日志记录
@@ -41,7 +43,8 @@ class APIService:
     def __init__(self, base_url: str):
         """初始化API服务，设置基础URL和创建HTTP客户端"""
         self.base_url = base_url
-        self.client = httpx.AsyncClient()
+        # 设置超时为2s，PU口袋服务器的请求限制大概为2s左右
+        self.client = httpx.AsyncClient(timeout=httpx.Timeout(2.0))
 
     async def close(self):
         """关闭HTTP客户端连接"""

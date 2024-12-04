@@ -412,10 +412,33 @@ async def reservation_add_activity(service: APIService, qq: int, activity_id: in
 
 async def reservation_join(service: APIService, qq: int, activity_id: int):
     """预约活动报名"""
+    request_start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     res = await join_activity(service, qq, activity_id)
+    nonebot.logger.info("POST End time:{}", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])  # 日志输出
+    nonebot.logger.info("POST Msg", str(res))
     if res is None:
-        await send_message_to_users("请求失败", [qq])
-        await modify_reservation_status(qq, activity_id, 2)
+        await send_message_to_users(
+            f'请求失败,开始尝试挣扎一下\n请求时间:{str(request_start_time)}',
+            [qq]
+        )
+        count = 0
+        while True:
+            # 重试2分钟，直到收到响应
+            if count < 60:
+                nonebot.logger.info("POST Start:{}", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])  # 日志输出
+                nonebot.logger.info("POST Num:{}", count)  # 日志输出
+                res = await join_activity(service, qq, activity_id)
+                if res is None:
+                    count += 1
+                elif res != 1 and res != 2:
+                    await send_message_to_users(str(res), [qq])
+                    await modify_reservation_status(qq, activity_id, 1)
+                    return
+            else:
+                await send_message_to_users("疑似PU接口问题,放弃挣扎了", [qq])
+                await modify_reservation_status(qq, activity_id, 2)
+                return
+
     elif res == 1:
         await send_message_to_users("用户信息错误", [qq])
         await modify_reservation_status(qq, activity_id, 2)
@@ -423,7 +446,12 @@ async def reservation_join(service: APIService, qq: int, activity_id: int):
         await send_message_to_users("用户token失效", [qq])
         await modify_reservation_status(qq, activity_id, 2)
     else:
-        await send_message_to_users(str(res), [qq])
+        await send_message_to_users(
+            f"{str(res)}\n"
+            f"请求时间:{str(request_start_time)}\n"
+            f'响应时间:{str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])}',
+            [qq]
+        )
         await modify_reservation_status(qq, activity_id, 1)
 
 

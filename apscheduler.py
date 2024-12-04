@@ -114,19 +114,28 @@ async def push_handler(service: APIService):
     nonebot.logger.info("End time:{}", datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"))  # 日志输出
 
 
-async def reservation_info_update(service: APIService):
+async def reservation_info_update(service: APIService, scheduler):
     """周期检查预约活动时间是否有更改"""
     async with AsyncSessionManager() as session:
+        # 获取预约列表
         reservations = await ReservationCRUD.get_all_reservations(session)
         for reservation in reservations:
+            # 获取预约列表活动的活动信息
             res = await get_activity_info(service, reservation.user_id, reservation.activity_id)
             if res is not None and res != 1 and res != 2:
                 if datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
                                      "%Y-%m-%d %H:%M:%S") != reservation.reservation_time:
-                    cache = reservation.to_dict()
-                    cache["reservation_time"] = datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
-                                                                  "%Y-%m-%d %H:%M:%S")
-                    await ReservationCRUD.update_reservation(session, reservation.id, cache)
+                    # 获取已有的定时任务
+                    job = scheduler.get_job(f"{reservation.user_id}_{reservation.activity_id}")
+                    if job:
+                        # 修改定时任务的执行时间
+                        job.reschedule(trigger="date",
+                                       run_date=datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
+                                                                  "%Y-%m-%d %H:%M:%S"))
+                        cache = reservation.to_dict()
+                        cache["reservation_time"] = datetime.strptime(res["data"]["baseInfo"]["joinStartTime"],
+                                                                      "%Y-%m-%d %H:%M:%S")
+                        await ReservationCRUD.update_reservation(session, reservation.id, cache)
 
 
 async def cyclic_update_token(service: APIService):
