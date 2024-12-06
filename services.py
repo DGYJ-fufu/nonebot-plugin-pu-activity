@@ -423,22 +423,29 @@ async def reservation_join(service: APIService, qq: int, activity_id: int):
         )
         count = 0
         while True:
-            # 重试2分钟，直到收到响应
-            if count < 60:
-                nonebot.logger.info("POST Start:{}", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])  # 日志输出
-                nonebot.logger.info("POST Num:{}", count)  # 日志输出
-                res = await join_activity(service, qq, activity_id)
-                if res is None:
+            # 重试4分钟，直到收到响应
+            if count < 120:
+                try:
+                    nonebot.logger.info("POST Start:{}", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])  # 日志输出
+                    nonebot.logger.info("POST Num:{}", count)  # 日志输出
+                    res = await join_activity(service, qq, activity_id)
+                    if res is None:
+                        count += 1
+                    elif res == 1:
+                        count += 1
+                    elif res == 2:
+                        count += 1
+                    else:
+                        await send_message_to_users(str(res), [qq])
+                        await modify_reservation_status(qq, activity_id, 1)
+                        return
+                except Exception as e:
                     count += 1
-                elif res != 1 and res != 2:
-                    await send_message_to_users(str(res), [qq])
-                    await modify_reservation_status(qq, activity_id, 1)
-                    return
+                    nonebot.logger.info("Error:{}", str(e))
             else:
                 await send_message_to_users("疑似PU接口问题,放弃挣扎了", [qq])
                 await modify_reservation_status(qq, activity_id, 2)
                 return
-
     elif res == 1:
         await send_message_to_users("用户信息错误", [qq])
         await modify_reservation_status(qq, activity_id, 2)
