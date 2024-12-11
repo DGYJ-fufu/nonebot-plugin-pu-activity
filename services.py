@@ -423,8 +423,8 @@ async def reservation_join(service: APIService, qq: int, activity_id: int):
         )
         count = 0
         while True:
-            # 重试4分钟，直到收到响应
-            if count < 120:
+            # 重试3分钟，直到收到响应
+            if count < 90:
                 try:
                     nonebot.logger.info("POST Start:{}", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])  # 日志输出
                     nonebot.logger.info("POST Num:{}", count)  # 日志输出
@@ -440,6 +440,7 @@ async def reservation_join(service: APIService, qq: int, activity_id: int):
                         await modify_reservation_status(qq, activity_id, 1)
                         return
                 except Exception as e:
+                    await asyncio.sleep(2)
                     count += 1
                     nonebot.logger.info("Error:{}", str(e))
             else:
