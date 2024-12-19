@@ -8,10 +8,10 @@ from nonebot.permission import *
 from nonebot.plugin import PluginMetadata
 from nonebot.rule import to_me
 
-from .config import Config
-
 from .handlers import *
 from .API.Network.api_service import APIService
+
+from .config import Config
 
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
@@ -42,6 +42,7 @@ find_reservation = on_keyword({"查询预约"}, rule=to_me())  # 查询预约
 remove_reservation = on_command("删除预约", rule=to_me())  # 删除预约
 update_token = on_keyword({"刷新token"}, rule=to_me())  # 刷新token
 my_credit = on_keyword({"查询分数"}, rule=to_me())  # 查询分数
+delete_user = on_keyword({"删除用户"}, rule=to_me())  # 删除用户
 help_cmd = on_keyword({"帮助"}, rule=to_me())  # 帮助
 # 添加群推送
 group_add = on_command(
@@ -71,6 +72,7 @@ update_token_handler(update_token, service)  # 刷新token
 my_credit_handler(my_credit, service)  # 查询分数
 group_add_handler(group_add, service)  # 添加群推送
 auto_push_group_handler(auto_push_group)  # 活动推送开关（群推送）
+delete_user_handler(delete_user)  # 删除用户
 help_cmd_handler(help_cmd)  # 帮助
 
 # 定时任务初始化

@@ -33,11 +33,13 @@ def user_add_handler(matcher: Type[Matcher], service: APIService):
             elif res == 0:
                 await matcher.finish(MessageTemplate("用户数据添加成功"))
         else:
-            res = await update_user(service, int(state["qq"]), state["username"], state["password"], state["school"])
+            res = await add_user(service, int(state["qq"]), state["username"], state["password"], state["school"])
             if res == 2:
                 await matcher.finish(MessageTemplate("账号信息错误"))
+            elif res == 1:
+                await matcher.finish(MessageTemplate("账号数据保存异常"))
             elif res == 0:
-                await matcher.finish(MessageTemplate("用户数据更新成功"))
+                await matcher.finish(MessageTemplate("用户数据添加成功"))
 
 
 def all_activity_handlers(matcher: Type[Matcher], service: APIService):
@@ -430,6 +432,30 @@ def auto_push_group_handler(matcher: Type[Matcher]):
                     await matcher.finish(MessageTemplate("成功"))
 
 
+def delete_user_handler(matcher: Type[Matcher]):
+    """删除用户"""
+
+    @matcher.handle()
+    async def _(event: Event):
+        qq = int(event.get_user_id())
+        user = await get_user(qq)
+        try:
+            async with AsyncSessionManager() as session:
+                reservations = await ReservationCRUD.get_reservation_qq(session, qq)
+                if len(reservations) == 0:
+                    return None
+                for reservation in reservations:
+                    await remove_reservation(qq, reservation.activity_id, session)
+        except Exception as e:
+            pass
+        if user is not None:
+            res = await remove_user(qq)
+            if res == 0:
+                await matcher.finish(MessageTemplate("删除成功"))
+        else:
+            await matcher.finish(MessageTemplate("删除出错"))
+
+
 def help_cmd_handler(matcher: Type[Matcher]):
     """帮助消息事件处理函数"""
 
@@ -449,6 +475,7 @@ def help_cmd_handler(matcher: Type[Matcher]):
             "✨删除预约🆔\n"
             "✨刷新token\n"
             "✨查询分数\n"
+            "✨删除用户\n"
             "⚠️注:🆔为活动ID"
         )
         await matcher.finish(Message(msg))

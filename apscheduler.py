@@ -79,11 +79,11 @@ async def push_handler(service: APIService):
                     }
                 )
 
-                # 获取性活动推送群对象
+                # 获取新活动推送群对象
                 push_groups = []
                 for group_item in push_group_list:
                     # （群推送）数据封装
-                    if push_user_info["sid"] == group_item["sid"]:
+                    if push_user_info["school"] == group_item["school"]:
                         for group in group_item["groups"]:
                             push_groups.append(group.group_id)
                         add_activity_list_group.append(

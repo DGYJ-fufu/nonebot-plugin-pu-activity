@@ -32,15 +32,15 @@ class UserCRUD:
         return result.scalars().all()
 
     @staticmethod
-    async def get_push_user(session: AsyncSession, sid: int):
-        """根据sid获取数据库订阅用户信息."""
-        result = await session.execute(select(User).where((User.sid == sid) & (User.push == 1)))
+    async def get_push_user(session: AsyncSession, school: int):
+        """根据school获取数据库订阅用户信息."""
+        result = await session.execute(select(User).where((User.school == school) & (User.push == 1)))
         return result.scalars().all()
 
     @staticmethod
     async def get_push_user_sids(session: AsyncSession):
         """获取订阅用户sid列表"""
-        result = await session.execute(select(User.sid).where(User.push == 1))
+        result = await session.execute(select(User.school).where(User.push == 1))
         return result.scalars().all()
 
     @staticmethod
@@ -198,13 +198,13 @@ class GroupCRUD:
         return result.scalars().all()
 
     @staticmethod
-    async def get_push_sid(session: AsyncSession, sid: int):
+    async def get_push_sid(session: AsyncSession, school: int):
         """获取某一学校的推送群号"""
-        result = await session.execute(select(Group).where((Group.push == 1) & (Group.sid == sid)))
+        result = await session.execute(select(Group).where((Group.push == 1) & (Group.school == school)))
         return result.scalars().all()
 
     @staticmethod
     async def get_push_sids(session: AsyncSession):
         """获取推送的sid"""
-        result = await session.execute(select(Group.sid).where(Group.push == 1))
+        result = await session.execute(select(Group.school).where(Group.push == 1))
         return result.scalars().all()

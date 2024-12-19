@@ -24,7 +24,7 @@ class User(Base):
     username = Column(Text, nullable=False)
     # 密码，非空
     password = Column(Text, nullable=False)
-    # SID，非空
+    # go_id，非空
     sid = Column(BigInteger, nullable=False)
     # CID，可为空
     cid = Column(BigInteger)
@@ -34,9 +34,21 @@ class User(Base):
     push = Column(Integer, default=0, nullable=False)
     # 年级
     yid = Column(Integer, nullable=False)
+    # go_id状态
+    is_go = Column(Integer, nullable=False)
+    # 学校ID
+    school = Column(Integer, nullable=False)
+    # 学校邮箱
+    email = Column(Text, nullable=False)
+    # 用户ID
+    uid = Column(Integer)
+    # OAuth认证令牌
+    oauth_token = Column(Text)
+    # OAuth认证令牌密钥
+    oauth_token_secret = Column(Text)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}(qq={self.qq}, username={self.username},username={self.password}, sid={self.sid}, cid={self.cid}, token={self.token}, push={self.push}, yid={self.yid})>"
+        return f"<{self.__class__.__name__}(qq={self.qq}, username={self.username},username={self.password}, sid={self.sid}, cid={self.cid}, token={self.token}, push={self.push}, yid={self.yid},is_go={self.is_go}, school={self.school}, email={self.email}, uid={self.uid},oauth_token={self.oauth_token}, oauth_token_secret={self.oauth_token_secret})>"
 
     def to_dict(self):
         return {
@@ -47,7 +59,13 @@ class User(Base):
             'cid': self.cid,
             'token': self.token,
             'push': self.push,
-            'yid': self.yid
+            'yid': self.yid,
+            'is_go': self.is_go,
+            'school': self.school,
+            'email': self.email,
+            'uid': self.uid,
+            'oauth_token': self.oauth_token,
+            'oauth_token_secret': self.oauth_token_secret
         }
 
 
@@ -81,7 +99,7 @@ class Reservation(Base):
             'activity_id': self.activity_id,
             'reservation_time': self.reservation_time,
             'status': self.status,
-            'created_at': self.created_at,
+            'created_at': self.created_at
         }
 
 
@@ -113,13 +131,16 @@ class Group(Base):
     push = Column(Integer, default=0, nullable=False)
     # SID，非空
     sid = Column(BigInteger, nullable=False)
+    # school
+    school = Column(Integer, nullable=False)
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}(group_id={self.group_id}, push={self.push}, sid={self.sid})>"
+        return f"<{self.__class__.__name__}(group_id={self.group_id}, push={self.push}, sid={self.sid}, school={self.school})>"
 
     def to_dict(self):
         return {
             'group_id': self.group_id,
             'push': self.push,
-            'sid': self.sid
+            'sid': self.sid,
+            'school': self.school
         }
