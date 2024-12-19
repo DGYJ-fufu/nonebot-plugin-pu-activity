@@ -36,6 +36,16 @@
 
 ## 注⚠️:
 本质还是定时发送报名请求，所以本机时间与PU口袋的服务器时间越接近，抢活动越快，建议使用较高精度的时间校准来同步本机时间
+使用前需要为Python安装如下软件包:
+```
+httpx
+orjson
+SQLAlchemy
+pydantic
+aiosqlite
+```
+在使用前请先安装 nonebot-plugin-apscheduler 插件至项目环境中，可在项目目录下执行以下命令： ```nb plugin install nonebot-plugin-apscheduler```
+
 
 ## 数据库结构（SQLite）
 
