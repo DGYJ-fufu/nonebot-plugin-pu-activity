@@ -31,25 +31,45 @@
 - ✨删除预约🆔
 - ✨刷新token
 - ✨查询分数
+- ✨删除用户
 - ✨帮助
 - ⚠️注:🆔为活动ID
 
+使用前需要为Python安装如下软件包:
+```
+httpx
+orjson
+SQLAlchemy
+pydantic
+aiosqlite
+```
+在使用前请先安装 nonebot-plugin-apscheduler 插件至项目环境中，可在项目目录下执行以下命令： ```nb plugin install nonebot-plugin-apscheduler```
+
+
 ## 数据库结构（SQLite）
+
+#### ⚠️注意：该版本应做了is_go为0院校的适配，修改了数据库结构，数据库很大程度不通用，如需要使用该版本请自行做好数据备份并手动完成数据迁移工作。
 
 ### 用户表 (`user`)
 
 ```sql
 create table user
 (
-    qq       bigint               not null
+    qq                 bigint               not null
         primary key,
-    username text                 not null,
-    password text                 not null,
-    sid      bigint               not null,
-    cid      bigint,
-    token    text,
-    push     tinyint(1) default 0 not null,
-    yid      integer              not null
+    username           text                 not null,
+    password           text                 not null,
+    sid                bigint               not null,
+    cid                bigint,
+    token              text,
+    push               tinyint(1) default 0 not null,
+    yid                integer              not null,
+    is_go              integer              not null,
+    school             integer              not null,
+    email              text                 not null,
+    uid                integer,
+    oauth_token        text,
+    oauth_token_secret text
 );
 ```
 
@@ -88,7 +108,8 @@ create table "group"
         constraint group_pk
             primary key,
     push     tinyint(1) default 0 not null,
-    sid      integer              not null
+    sid      integer              not null,
+    school   integer              not null
 );
 ```
 
