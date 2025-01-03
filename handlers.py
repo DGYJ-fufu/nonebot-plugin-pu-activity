@@ -59,39 +59,42 @@ def all_activity_handlers(matcher: Type[Matcher], service: APIService):
                 await matcher.finish(MessageTemplate("请求错误,刷新token,请重试"))
             else:
                 msg = ""
-                for activity in res:
-                    msg += f'✨活动名称:{activity["name"]}\n'
-                    msg += f'🏷️️活动类型:{activity["categoryName"]}\n'
-                    msg += f'💯活动分值:{activity["credit"]}\n'
-                    msg += f'🕐报名开始时间:{activity["joinStartTime"]}\n'
-                    msg += f'🕐报名结束时间:{activity["joinEndTime"]}\n'
-                    msg += f'🕒活动开始时间:{activity["startTime"]}\n'
-                    msg += f'🕓活动结束时间:{activity["endTime"]}\n'
-                    msg += f'👉可参与人数:{activity["allowUserCount"]}\n'
-                    msg += f'🤚已报名人数:{activity["joinUserCount"]}\n'
-                    msg += f'🏫活动院系:'
-                    if len(activity["allowCollege"]) > 0:
-                        msg += '\n'
-                        for allowCollege in activity["allowCollege"]:
-                            msg += f'\t{allowCollege["name"]}\n'
+                if len(res) > 0:
+                    for activity in res:
+                        msg += f'✨活动名称:{activity["name"]}\n'
+                        msg += f'🏷️️活动类型:{activity["categoryName"]}\n'
+                        msg += f'💯活动分值:{activity["credit"]}\n'
+                        msg += f'🕐报名开始时间:{activity["joinStartTime"]}\n'
+                        msg += f'🕐报名结束时间:{activity["joinEndTime"]}\n'
+                        msg += f'🕒活动开始时间:{activity["startTime"]}\n'
+                        msg += f'🕓活动结束时间:{activity["endTime"]}\n'
+                        msg += f'👉可参与人数:{activity["allowUserCount"]}\n'
+                        msg += f'🤚已报名人数:{activity["joinUserCount"]}\n'
+                        msg += f'🏫活动院系:'
+                        if len(activity["allowCollege"]) > 0:
+                            msg += '\n'
+                            for allowCollege in activity["allowCollege"]:
+                                msg += f'\t{allowCollege["name"]}\n'
+                        else:
+                            msg += '全部院系\n'
+                        msg += f'🧸活动年级:'
+                        if len(activity["allowYear"]) > 0:
+                            msg += '\n\t'
+                            for allowYear in activity["allowYear"]:
+                                msg += f'{allowYear["name"]}'
+                                if allowYear != activity["allowYear"][len(activity["allowYear"]) - 1]:
+                                    msg += ','
+                                else:
+                                    msg += '\n'
+                        else:
+                            msg += '全部年级\n'
+                        msg += f'⛱️活动地址:{activity["address"]}\n'
+                        msg += f'⭐活动状态:{activity["statusName"]}\n'
+                        msg += f'🆔活动ID:{activity["id"]}'
+                        if activity != res[len(res) - 1]:
+                            msg += "\n\n"
                     else:
-                        msg += '全部院系\n'
-                    msg += f'🧸活动年级:'
-                    if len(activity["allowYear"]) > 0:
-                        msg += '\n\t'
-                        for allowYear in activity["allowYear"]:
-                            msg += f'{allowYear["name"]}'
-                            if allowYear != activity["allowYear"][len(activity["allowYear"]) - 1]:
-                                msg += ','
-                            else:
-                                msg += '\n'
-                    else:
-                        msg += '全部年级\n'
-                    msg += f'⛱️活动地址:{activity["address"]}\n'
-                    msg += f'⭐活动状态:{activity["statusName"]}\n'
-                    msg += f'🆔活动ID:{activity["id"]}'
-                    if activity != res[len(res) - 1]:
-                        msg += "\n\n"
+                        msg = "暂无可参加活动"
                 await matcher.finish(MessageTemplate(msg))
         else:
             await matcher.finish(MessageTemplate("用户数据错误,请检查用户数据"))
