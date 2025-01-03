@@ -93,8 +93,8 @@ def all_activity_handlers(matcher: Type[Matcher], service: APIService):
                         msg += f'🆔活动ID:{activity["id"]}'
                         if activity != res[len(res) - 1]:
                             msg += "\n\n"
-                    else:
-                        msg = "暂无可参加活动"
+                else:
+                    msg = "暂无可参加活动"
                 await matcher.finish(MessageTemplate(msg))
         else:
             await matcher.finish(MessageTemplate("用户数据错误,请检查用户数据"))
