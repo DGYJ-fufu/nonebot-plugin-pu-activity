@@ -18,7 +18,8 @@ async def add_user(service: APIService, qq: int, username: str, password: str, s
         "password": password,
     }
 
-    go_ids = await service.get_go_id()
+    service2 = APIService('https://pocketuni.net')
+    go_ids = await service2.get_go_id()
 
     if go_ids is not None:
         for go_id_item in go_ids:

@@ -144,6 +144,10 @@ class APIService:
             if oauth_token and oauth_token_secret:
                 headers["oauth_token"] = oauth_token
                 headers["oauth_token_secret"] = oauth_token_secret
+        elif mod == 3:
+            headers = get_headers_2()
+            headers["Priority"] = "u=1, i"
+            del headers["Accept-Encoding"]
         try:
             if method.upper() == "POST":
                 response = await self.client.post(
@@ -182,7 +186,7 @@ class APIService:
             'mod': 'Sitelist',
             'act': 'getSchools'
         }
-        return await self._request(mod=1, method='GET', endpoint="/index.php", params=params)
+        return await self._request(mod=3, method='GET', endpoint="/index.php", params=params)
 
     async def login(self,
                     is_go: int, username: Optional[str] = None,
