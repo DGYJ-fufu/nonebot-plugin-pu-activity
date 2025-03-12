@@ -38,7 +38,6 @@ def get_headers_2() -> Dict[str, str]:
     """multipart/form-data请求头"""
     return {
         'Accept': 'application/json, text/plain, */*',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'DNT': '1',
         'Host': 'pocketuni.net',
@@ -57,7 +56,6 @@ def get_headers_2() -> Dict[str, str]:
 def get_headers_3() -> Dict[str, str]:
     """x-www-form-urlencoded请求头"""
     return {
-        'Accept-Encoding': 'gzip',
         'User-Agent': 'client:Android version:7.1.16 Brand:OnePlus Product:PHB110 OsVersion:9',
         'Host': 'pocketuni.net',
         'Content-Type': 'application/x-www-form-urlencoded'
