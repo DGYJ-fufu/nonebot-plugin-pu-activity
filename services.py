@@ -576,6 +576,7 @@ async def send_message_to_users(msg: str, qq_list: list):
     bot = get_bot()
     for qq in qq_list:
         await bot.send_private_msg(user_id=qq, message=msg)
+        await asyncio.sleep(0.4)  # 每条消息间隔 0.3 秒
 
 
 async def send_message_to_group(msg: str, group_list: list):
@@ -583,6 +584,7 @@ async def send_message_to_group(msg: str, group_list: list):
     bot = get_bot()
     for group in group_list:
         await bot.send_group_msg(group_id=group, message=msg)
+        await asyncio.sleep(0.4)  # 每条消息间隔 0.3 秒
 
 
 async def database_get_activities():

@@ -104,6 +104,8 @@ async def push_handler(service: APIService):
             # 个人订阅推送
             await send_message_to_users(msg, add_push_list["push_users"])
 
+    await asyncio.sleep(1)  # 每条消息间隔 1 秒
+
     # 群活动推送
     for add_push_list in add_activity_list_group:
         if add_push_list["push_activities"]:
