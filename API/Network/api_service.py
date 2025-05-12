@@ -145,7 +145,6 @@ class APIService:
         elif mod == 3:
             headers = get_headers_2()
             headers["Priority"] = "u=1, i"
-            del headers["Accept-Encoding"]
         try:
             if method.upper() == "POST":
                 response = await self.client.post(
