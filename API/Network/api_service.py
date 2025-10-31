@@ -4,6 +4,7 @@ import orjson
 import nonebot
 from datetime import datetime
 from typing import Optional, Any, Dict
+from .pu_sign import generate_random_echo, current_timestamp_str, generate_x_sign
 
 # 设置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -50,13 +51,21 @@ class APIService:
         """关闭HTTP客户端连接"""
         await self.client.aclose()
 
-    async def _request(self, method: str, endpoint: str, json: Optional[Dict[str, Any]] = None,
-                       params: Optional[Dict[str, Any]] = None, token: Optional[str] = None,
-                       sid: Optional[int] = None) -> Optional[Dict[str, Any]]:
+    async def _request(self,
+                       method: str,
+                       endpoint: str,
+                       json: Optional[Dict[str, Any]] = None,
+                       params: Optional[Dict[str, Any]] = None,
+                       token: Optional[str] = None,
+                       sid: Optional[int] = None,
+                       xSign: Optional[str] = None,
+                       ) -> Optional[Dict[str, Any]]:
         """通用请求方法，用于发送网络请求"""
         headers = get_headers()
         if token and sid:
             headers["Authorization"] = f"Bearer {token}:{sid}"
+            if xSign:
+                headers["X-Sign"] = xSign
 
         response = None  # 初始化响应变量为None
         try:
@@ -199,12 +208,15 @@ class APIService:
 
     async def join(self, token: str, sid: int, activity_id: int):
         """活动报名"""
+        echo = generate_random_echo()
+        timestamp = current_timestamp_str()
         return await self._request(
             'POST',
             "/apis/activity/join",
             json={"activityId": activity_id},
             token=token,
-            sid=sid
+            sid=sid,
+            xSign=generate_x_sign(echo=echo, timestamp=timestamp, client='web')
         )
 
     async def info(self, token: str, sid: int):
