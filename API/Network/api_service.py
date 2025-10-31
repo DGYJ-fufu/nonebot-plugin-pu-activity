@@ -7,6 +7,7 @@ import orjson
 import nonebot
 from datetime import datetime
 from typing import Optional, Any, Dict
+from .pu_sign import generate_random_echo, current_timestamp_str, generate_x_sign
 
 # 设置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -92,7 +93,8 @@ class APIService:
                        oauth_token: Optional[str] = None,
                        oauth_token_secret: Optional[str] = None,
                        form_data: Optional[Dict[str, Any]] = None,
-                       data: Optional[Dict[str, Any]] = None
+                       data: Optional[Dict[str, Any]] = None,
+                       xSign: Optional[str] = None,
                        ) -> Optional[Dict[str, Any]]:
         """
         通用请求方法
@@ -123,6 +125,8 @@ class APIService:
             headers = get_headers()
             if token and sid:
                 headers["Authorization"] = f"Bearer {token}:{sid}"
+                if xSign:
+                    headers["X-Sign"] = xSign
         elif mod == 1:
             headers = get_headers_2()
             if form_data and mod == 1:
@@ -612,13 +616,16 @@ class APIService:
                 form_data=form_data
             )
         elif is_go == 1:
+            echo = generate_random_echo()
+            timestamp = current_timestamp_str()
             return await self._request(
                 mod=0,
                 method='POST',
                 endpoint="/apis/activity/join",
                 json={"activityId": activity_id},
                 token=token,
-                sid=sid
+                sid=sid,
+                xSign=generate_x_sign(echo=echo, timestamp=timestamp, client='web')
             )
 
     async def info(self,
